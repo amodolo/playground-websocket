@@ -1,0 +1,112 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: playground-websocket
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-srv
+  namespace: playground-websocket
+spec:
+  selector:
+    app: redis
+  ports:
+    - port: 6379
+      targetPort: 6379
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-deployment
+  namespace: playground-websocket
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+        - name: redis
+          image: redis
+          ports:
+            - containerPort: 6379
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: playground-srv
+  namespace: playground-websocket
+spec:
+  selector:
+    app: playground
+  ports:
+    - port: 8080
+      targetPort: 8080
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: playground-deployment
+  namespace: playground-websocket
+  labels:
+    app: playground
+spec:
+  replicas: 5
+  selector:
+    matchLabels:
+      app: playground
+  template:
+    metadata:
+      labels:
+        app: playground
+    spec:
+      containers:
+        - name: playground-websocket
+          image: amodolo/playground-websocket
+          ports:
+            - containerPort: 8080
+          env:
+            - name: REDIS_HOST
+              value: 'redis-srv'
+            - name: REDIS_PORT
+              value: '6379'
+
+---
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: playground-ingress
+  namespace: playground-websocket
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/affinity: cookie
+#    nginx.ingress.kubernetes.io/affinity-mode: persistent
+#    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+#    nginx.ingress.kubernetes.io/session-cookie-path: /playground/w
+#    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+#    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+spec:
+  rules:
+    - http:
+        paths:
+          - path: /playground
+            pathType: Prefix
+            backend:
+              service:
+                name: playground-srv
+                port:
+                  number: 8080
