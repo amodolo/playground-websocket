@@ -7,8 +7,9 @@ class ClientEndpoint {
      * TODO
      * @param {string} channel 
      */
-    constructor(channel) {
+    constructor(channel, autoReconnect) {
         this.channel = channel;
+        this.autoReconnect = autoReconnect;
         this.eventHandlers = {}
     }
 
@@ -17,6 +18,7 @@ class ClientEndpoint {
      */
     connect() {
         this.socket = new WebSocket(this.#getUrl());
+        this.connectionOpen = true;
         this.#attachHandlers();
     }
 
@@ -24,15 +26,18 @@ class ClientEndpoint {
      * TODO
      */
     disconnect() {
-        clearInterval(this.heartBeatInterval);
-        if (!!this.socket) this.socket.close();
+        if (!!this.socket) {
+            this.connectionOpen = false;
+            this.socket.close();
+        }
     }
 
     /**
      * TODO
      */
     reconnect() {
-        // TODO
+        this.disconnect();
+        this.connect();
     }
 
     /**
@@ -55,13 +60,16 @@ class ClientEndpoint {
      * TODO
      * @param {string} data 
      */
-    send(type, content, to) {
-        if (this.isOpen()) this.socket.send(JSON.stringify({
-            "type": type,
-            "content": content,
-            "sender": user,
-            "target": to
-        }));
+    send(type, user, wm, content) {
+        if (this.isOpen()) {
+            let target = user;
+            if (wm) target += "|" + wm;
+            this.socket.send(JSON.stringify({
+                "type": type,
+                "content": content,
+                "target": target
+            }));
+        }
     }
 
     /**
@@ -84,8 +92,8 @@ class ClientEndpoint {
                 else this.onMessageHandler = handler;
                 break;
             case 'close':
-                if (!!this.socket) this.socket.onclose = handler;
-                else this.onCloseHandler = handler;
+                if (!!this.socket) this.socket.onclose = (event) => this.#innerOnClose(event, handler);
+                else this.onCloseHandler = (event) => this.#innerOnClose(event, handler);
                 break;
             default:
             // nothing to do
@@ -94,8 +102,10 @@ class ClientEndpoint {
 
     #getUrl() {
         let protocol = 'https:' === location.protocol.toLowerCase() ? 'wss://' : 'ws://';
-        let contextName = location.pathname.slice(1).split('/')[0];
-        return `${protocol}${location.host}/${contextName}/${this.channel}`;
+        let contextName = '/'+location.pathname.slice(1).split('/')[0];
+        let channel = this.channel;
+        if (!channel.startsWith('/')) channel = `/${channel}`;
+        return `${protocol}${location.host}${contextName}${channel}`;
     }
 
     #attachHandlers() {
@@ -103,5 +113,10 @@ class ClientEndpoint {
         if (!!this.onErrorHandler) this.socket.onerror = this.onErrorHandler;
         if (!!this.onMessageHandler) this.socket.onmessage = this.onMessageHandler;
         if (!!this.onCloseHandler) this.socket.onclose = this.onCloseHandler;
+    }
+
+    #innerOnClose(event, handler) {
+        handler(event);
+        if (this.connectionOpen) this.reconnect();
     }
 }

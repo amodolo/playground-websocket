@@ -1,4 +1,4 @@
-package org.playground.models;
+package org.playground.endpoint;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -7,46 +7,62 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.Serializable;
 
+/**
+ *
+ */
 @JsonAutoDetect(
         getterVisibility = JsonAutoDetect.Visibility.NONE,
         setterVisibility = JsonAutoDetect.Visibility.NONE,
         fieldVisibility = JsonAutoDetect.Visibility.NONE)
-public class Notification implements Serializable {
+public class WebMessage implements Serializable {
     @JsonProperty
     private String type;
-    @JsonProperty
-    private Long sender;
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private String sender;
     @JsonProperty
     private String target;
     @JsonProperty
     private Serializable content;
 
+    /**
+     *
+     * @return
+     */
     public String getType() {
         return type;
     }
 
-    public Long getSender() {
+    /**
+     *
+     * @return
+     */
+    public String getSender() {
         return sender;
     }
 
+    void setSender(String sender) {
+        this.sender = sender;
+    }
+
+    /**
+     *
+     * @return
+     */
     public String getTarget() {
         return target;
     }
 
-    public Long getReceiver() {
-        int idx = target.indexOf("@");
-        if (idx != -1) return Long.parseLong(target.substring(0, idx));
-        else return Long.parseLong(target);
-    }
-
-    public String getReceiverWM() {
-        int idx = target.indexOf("@");
-        if (idx != -1) return target.substring(idx+1);
-        else return null;
-    }
-
     public Serializable getContent() {
         return content;
+    }
+
+    WebMessage newTarget(String target) {
+        WebMessage newWebMessage = new WebMessage();
+        newWebMessage.type = getType();
+        newWebMessage.sender = getSender();
+        newWebMessage.target = target;
+        newWebMessage.content = getContent();
+        return newWebMessage;
     }
 
     @Override
@@ -58,10 +74,12 @@ public class Notification implements Serializable {
         }
     }
 
+    /**
+     *
+     * @return
+     * @throws JsonProcessingException
+     */
     public String toJson() throws JsonProcessingException {
         return new ObjectMapper().writeValueAsString(this);
-    }
-    public static Notification fromJson(String s) throws JsonProcessingException {
-        return new ObjectMapper().readValue(s, Notification.class);
     }
 }

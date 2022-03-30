@@ -1,3 +1,4 @@
+# application namespace
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -5,12 +6,15 @@ metadata:
 
 ---
 
+# REDIS (service and deployment)
+
 apiVersion: v1
 kind: Service
 metadata:
   name: redis-srv
   namespace: playground-websocket
 spec:
+  type: NodePort
   selector:
     app: redis
   ports:
@@ -42,6 +46,7 @@ spec:
 
 ---
 
+# application service, ingresses and deployment
 apiVersion: v1
 kind: Service
 metadata:
@@ -54,6 +59,54 @@ spec:
     - port: 8080
       targetPort: 8080
 
+
+---
+
+# first ingress to serve all the resources that doesn't require a sticky session
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: playground-ingress
+  namespace: playground-websocket
+  annotations:
+    kubernetes.io/ingress.class: nginx
+spec:
+  rules:
+    - http:
+        paths:
+          - path: /playground
+            pathType: Prefix
+            backend:
+              service:
+                name: playground-srv
+                port:
+                  number: 8080
+
+---
+
+# second ingress to serve only the requests that requires a sticky session
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: playground-ingress-sticky
+  namespace: playground-websocket
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/affinity: cookie
+    nginx.ingress.kubernetes.io/session-cookie-path: /playground/w
+    nginx.ingress.kubernetes.io/affinity-mode: persistent
+spec:
+  rules:
+    - http:
+        paths:
+          - path: /playground/w
+            pathType: Prefix
+            backend:
+              service:
+                name: playground-srv
+                port:
+                  number: 8080
+
 ---
 
 apiVersion: apps/v1
@@ -64,7 +117,7 @@ metadata:
   labels:
     app: playground
 spec:
-  replicas: 5
+  replicas: 3
   selector:
     matchLabels:
       app: playground
@@ -83,30 +136,3 @@ spec:
               value: 'redis-srv'
             - name: REDIS_PORT
               value: '6379'
-
----
-
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: playground-ingress
-  namespace: playground-websocket
-  annotations:
-    kubernetes.io/ingress.class: nginx
-    nginx.ingress.kubernetes.io/affinity: cookie
-#    nginx.ingress.kubernetes.io/affinity-mode: persistent
-#    nginx.ingress.kubernetes.io/ssl-redirect: "false"
-#    nginx.ingress.kubernetes.io/session-cookie-path: /playground/w
-#    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
-#    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
-spec:
-  rules:
-    - http:
-        paths:
-          - path: /playground
-            pathType: Prefix
-            backend:
-              service:
-                name: playground-srv
-                port:
-                  number: 8080
