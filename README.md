@@ -18,7 +18,7 @@ mvn jetty:run
 ```
 the application will be deployed at the following url: http://localhost:8080/playground/w/login
 
-refers to [User Credential]{#user-credentials} section to get the login credentials.
+refers to [User Credential](#user-credentials) section to get the login credentials.
 
 > the application requires a Redis server available on localhost:6379 
 
@@ -29,7 +29,7 @@ docker-compose up
 ```
 the application will be deployed at the following url: http://localhost:8080/playground/w/login
 
-refers to [User Credential]{#user-credentials} section to get the login credentials.
+refers to [User Credential](#user-credentials) section to get the login credentials.
 
 ## Run into Kubernetes environment
 use this command to deploy the application within a kubernetes cluster
@@ -39,7 +39,7 @@ kubectl apply -f .\kube-deployment.yaml
 ```
 the application will be deployed at the following url: http://localhost:8080/playground/w/login
 
-refers to [User Credential]{#user-credentials} section to get the login credentials.
+refers to [User Credential](#user-credentials) section to get the login credentials.
 
 ### User credentials
 use this credential to log into the application
