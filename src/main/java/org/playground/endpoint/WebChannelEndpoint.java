@@ -42,7 +42,9 @@ public class WebChannelEndpoint {
         WebChannelDispatcher.subscribe(this);
 
         try {
-            session.getAsyncRemote().sendText("connected on node " + InetAddress.getLocalHost());
+            synchronized (this.session) {
+                session.getAsyncRemote().sendText("connected on node " + InetAddress.getLocalHost());
+            }
         } catch (UnknownHostException e) {
             LOG.error(e);
         }
@@ -51,7 +53,6 @@ public class WebChannelEndpoint {
     @OnClose
     public void onClose(Session session, CloseReason reason) {
         LOG.warn("session {} closed: {}", session.getId(), reason);
-//        session.getAsyncRemote().sendText("disconnected. "+reason);
         WebChannelDispatcher.unsubscribe(this);
     }
 

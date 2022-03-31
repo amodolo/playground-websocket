@@ -111,7 +111,9 @@ public class WebChannelDispatcher {
         RedisService.execute(client -> {
             String value;
             while ((value = client.lpop(KEY_PREFIX + key)) != null) {
-                session.getAsyncRemote().sendText(value);
+                synchronized (session) {
+                    session.getAsyncRemote().sendText(value);
+                }
             }
             return null;
         });
