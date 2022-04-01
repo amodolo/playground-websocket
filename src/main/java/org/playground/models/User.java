@@ -1,8 +1,12 @@
 package org.playground.models;
 
+import org.playground.services.WebSessions;
+
+import javax.servlet.http.HttpSessionBindingEvent;
+import javax.servlet.http.HttpSessionBindingListener;
 import java.io.Serializable;
 
-public class User implements Serializable {
+public class User implements Serializable, HttpSessionBindingListener {
     private final Long id;
     private final String username;
     private final String password;
@@ -15,6 +19,14 @@ public class User implements Serializable {
         this.password = password;
         this.name = name;
         this.surname = surname;
+    }
+
+    public User(User user) {
+        this.id = user.id;
+        this.username = user.username;
+        this.password = user.password;
+        this.name = user.name;
+        this.surname = user.surname;
     }
 
     public Long getId() {
@@ -35,5 +47,15 @@ public class User implements Serializable {
 
     public String getSurname() {
         return surname;
+    }
+
+    @Override
+    public void valueBound(HttpSessionBindingEvent event) {
+        WebSessions.register(event.getSession(), this);
+    }
+
+    @Override
+    public void valueUnbound(HttpSessionBindingEvent event) {
+        WebSessions.unregister(event.getSession());
     }
 }

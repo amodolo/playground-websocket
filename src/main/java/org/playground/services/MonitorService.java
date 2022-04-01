@@ -2,10 +2,14 @@ package org.playground.services;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.playground.models.WindowManager;
 import org.playground.models.WindowManagers;
 import redis.clients.jedis.Transaction;
 
-import java.util.*;
+import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.stream.Collectors;
 
 public class MonitorService {
     private static final Logger LOG = LogManager.getLogger();
@@ -15,9 +19,14 @@ public class MonitorService {
         public void run() {
             RedisService.execute(client -> {
                 Transaction t = client.multi();
-                WindowManagers.getAll().forEach(wm -> {
-                    String key = "user:" + wm.getUser().getId();
-                    t.zadd(key, System.currentTimeMillis(), wm.getId());
+
+                WebSessions.getSessions().forEach((session, user) -> {
+                    String key = "session:" + user.getId() + ":" + session.getId();
+                    Map<String, Double> values = WindowManagers.getUsersWm(user)
+                            .stream()
+                            .collect(Collectors.toMap(WindowManager::getId, wm -> (double) System.currentTimeMillis()));
+
+                    t.zadd(key, values);
                     t.expire(key, 10);
                 });
                 t.exec();
@@ -33,24 +42,6 @@ public class MonitorService {
 
     public static void stop() {
         timer.cancel();
-    }
-
-    public static Map<Long, List<String>> getWMReferences(String userId) {
-        Map<Long, List<String>> ret = new HashMap<>();
-        try {
-            String key = userId == null ? "user:*" : "user:"+userId;
-            Set<String> usersKey = RedisService.keys(key, null);
-            for (String userKey : usersKey) {
-                Long user = Long.parseLong(userKey.substring(5));
-                RedisService.execute(client -> {
-                    ret.put(user, client.zrange(userKey, 0, -1));
-                    return null;
-                });
-            }
-        } catch (Exception e) {
-            LOG.error(e);
-        }
-        return ret;
     }
 
 }

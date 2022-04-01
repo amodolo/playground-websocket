@@ -2,7 +2,6 @@ package org.playground.endpoint;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.playground.services.MonitorService;
 import org.playground.services.RedisService;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPubSub;
@@ -10,18 +9,16 @@ import redis.clients.jedis.Transaction;
 
 import javax.websocket.Session;
 import java.net.InetAddress;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  *
  */
-public class WebChannelDispatcher {
+public class PipeDispatcher {
 
-    private static final String KEY_PREFIX = "web-channel:";
-    private static final String CHANNEL_DISPATCH = WebChannelDispatcher.class.getSimpleName() + ":CHANNEL_DISPATCH";
     private static final Logger LOG = LogManager.getLogger();
+    private static final String KEY_PREFIX = "pipe:message:";
+    private static final String CHANNEL_PREFIX = KEY_PREFIX + ":CH_";
     private static final Map<String, Session> registry = new HashMap<>();
 
     private static Thread subscriberThread;
@@ -42,16 +39,19 @@ public class WebChannelDispatcher {
     public static void stop() {
         subscriber.unsubscribe();
         subscriber = null;
+        subscriberThread.interrupt();
         subscriberThread = null;
     }
 
-    static void subscribe(WebChannelEndpoint endpoint) {
+    static void subscribe(PipeEndpoint endpoint) {
         String key = getId(endpoint);
         registry.put(key, endpoint.getSession());
         read(key);
+        subscriber.subscribe(CHANNEL_PREFIX + getId(endpoint));
     }
 
-    static void unsubscribe(WebChannelEndpoint endpoint) {
+    static void unsubscribe(PipeEndpoint endpoint) {
+        subscriber.unsubscribe(CHANNEL_PREFIX + getId(endpoint));
         registry.remove(getId(endpoint));
     }
 
@@ -59,43 +59,38 @@ public class WebChannelDispatcher {
         return String.format("%d|%s", userId, wmId);
     }
 
-    static String getId(WebChannelEndpoint endpoint) {
+    static String getId(PipeEndpoint endpoint) {
         return getId(endpoint.getUser(), endpoint.getWM());
     }
 
-    private static boolean hasSingleTarget(WebMessage message) {
-        return message.getTarget().matches("\\d+\\|.+"); // userId|wmId
-    }
-
     /**
-     *
-     * @param webMessage
+     * @param message
      */
-    public static void send(WebMessage webMessage) {
-        if (hasSingleTarget(webMessage)) {
-            // send to single user's window
-            write(KEY_PREFIX + webMessage.getTarget(), webMessage);
-        } else {
-            // send to all user's windows or all windows of every connected depending on the message target
-            Map<Long, List<String>> users = MonitorService.getWMReferences(webMessage.getTarget());
-            for (Map.Entry<Long, List<String>> entry: users.entrySet()) {
-                Long user = entry.getKey();
-                List<String> wms = entry.getValue();
-                for (String wm: wms) {
-                    String target = getId(user, wm);
-                    write(KEY_PREFIX + target, webMessage.newTarget(target));
-                }
+    public static void send(Message message) {
+        try {
+            Set<String> sessions = RedisService.keys("session:" + message.getTargetUser() + ":*", null);
+            try (Jedis client = RedisService.getClient()) {
+                sessions.forEach(key -> {
+                    List<String> wms = client.zrange(key, 0, -1);
+                    if (message.getTargetWm() == null) {
+                        wms.forEach(wm -> write(getId(message.getTargetUser(), wm), message));
+                    } else if (wms.contains(message.getTargetWm())) {
+                        write(message.getTarget(), message);
+                    }
+                });
             }
+        } catch (Exception e) {
+            LOG.error("error retrieving sessions", e);
         }
     }
 
-    private static void write(String key, WebMessage webMessage) {
+    private static void write(String key, Message message) {
         RedisService.execute(client -> {
             try {
                 Transaction t = client.multi();
-                t.lpush(key, webMessage.toJson());
-                t.expire(key, 10 * 60L); // 10 min
-                t.publish(CHANNEL_DISPATCH, webMessage.getTarget());
+                t.lpush(KEY_PREFIX+key, message.toJson());
+                t.expire(KEY_PREFIX+key, 60L); // 1min
+                t.publish(CHANNEL_PREFIX + key, key);
                 t.exec();
             } catch (Exception e) {
                 LOG.error("notification write error", e);
@@ -120,12 +115,13 @@ public class WebChannelDispatcher {
     }
 
     private static class Subscriber extends JedisPubSub implements Runnable {
+        private final String loopback = "lo_" + UUID.randomUUID();
 
         @Override
         public void run() {
             try (Jedis client = RedisService.getClient()) {
                 if (client.isConnected()) LOG.debug("Connection established for node {}", InetAddress.getLocalHost());
-                client.subscribe(this, CHANNEL_DISPATCH);
+                client.subscribe(this, loopback);
             } catch (Exception e) {
                 LOG.error("connection error", e);
             }
@@ -133,7 +129,9 @@ public class WebChannelDispatcher {
 
         @Override
         public void onMessage(String channel, String msg) {
-            read(msg);
+            if (channel.startsWith(CHANNEL_PREFIX)) {
+                read(msg);
+            }
         }
     }
 }

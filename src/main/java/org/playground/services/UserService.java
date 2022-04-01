@@ -24,6 +24,7 @@ public class UserService {
     public static User get(String username) {
         return registry.values().stream()
                 .filter(user -> user.getUsername().equals(username) )
+                .map(User::new)
                 .findFirst()
                 .orElseThrow();
     }

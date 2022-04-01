@@ -102,7 +102,9 @@ class ClientEndpoint {
 
     #getUrl() {
         let protocol = 'https:' === location.protocol.toLowerCase() ? 'wss://' : 'ws://';
-        let contextName = '/'+location.pathname.slice(1).split('/')[0];
+        let contextName = location.pathname.slice(1);
+        let i = contextName.lastIndexOf('/');
+        contextName = i !==-1 ? `/${contextName.substring(0,i)}` : `/${contextName}`
         let channel = this.channel;
         if (!channel.startsWith('/')) channel = `/${channel}`;
         return `${protocol}${location.host}${contextName}${channel}`;

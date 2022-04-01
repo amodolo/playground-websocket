@@ -2,7 +2,7 @@ let client;
 
 function connect() {
     let modal;
-    client = new ClientEndpoint(`/web-channel/${userId}/${wmId}`);
+    client = new ClientEndpoint(`/pipe/${wmId}`);
     client.on('message', (event) => {
         var log = document.getElementById("log");
         console.log(event.data);

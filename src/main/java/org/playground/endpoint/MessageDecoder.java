@@ -10,14 +10,14 @@ import javax.websocket.EndpointConfig;
 /**
  *
  */
-public class WebMessageDecoder implements Decoder.Text<WebMessage> {
+public class MessageDecoder implements Decoder.Text<Message> {
 
     private static final ObjectMapper mapper = new ObjectMapper();
 
     @Override
-    public WebMessage decode(String s) throws DecodeException {
+    public Message decode(String s) throws DecodeException {
         try {
-            return mapper.readValue(s, WebMessage.class);
+            return mapper.readValue(s, Message.class);
         } catch (JsonProcessingException e) {
             throw new DecodeException(s, "deserialization error", e);
         }

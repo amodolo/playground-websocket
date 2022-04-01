@@ -13,7 +13,6 @@ import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 @WebServlet("/w/app")
@@ -53,6 +52,6 @@ public class Servlet extends HttpServlet {
                 .filter(wm -> wm.getUser().equals(user))
                 .collect(Collectors.toList());
 
-        for (WindowManager wm: wms) WindowManagers.unregister(wm);
+        for (WindowManager wm : wms) WindowManagers.unregister(wm);
     }
 }

@@ -14,10 +14,11 @@ import java.net.UnknownHostException;
  *
  */
 @ServerEndpoint(
-        value = "/web-channel/{user}/{wm}",
-        decoders = WebMessageDecoder.class
+        value = "/w/pipe/{wm}",
+        decoders = MessageDecoder.class,
+        configurator = PipeConfigurator.class
 )
-public class WebChannelEndpoint {
+public class PipeEndpoint {
     private static final Logger LOG = LogManager.getLogger();
 
     private long user;
@@ -25,21 +26,20 @@ public class WebChannelEndpoint {
     private Session session;
 
     @OnOpen
-    public void onOpen(Session session, @PathParam("user") @NotNull String user, @PathParam("wm") @NotNull String wm) {
+    public void onOpen(Session session, @PathParam("wm") @NotNull String wm) {
         LOG.debug("session opened: {}", session.getId());
         LOG.trace("maxTextMessageBufferSize: {}", session.getMaxTextMessageBufferSize());
         LOG.trace("maxBinaryMessageBufferSize: {}", session.getMaxBinaryMessageBufferSize());
         LOG.trace("maxIdleTimeout: {}", session.getMaxIdleTimeout());
 
 
-        this.user = Long.parseLong(user);
+        this.user = (long) session.getUserProperties().get("user");
         this.wm = wm;
         this.session = session;
-        session.getUserProperties().put("user", user);
         session.getUserProperties().put("wm", wm);
         session.setMaxIdleTimeout(0);
 
-        WebChannelDispatcher.subscribe(this);
+        PipeDispatcher.subscribe(this);
 
         try {
             synchronized (this.session) {
@@ -53,14 +53,14 @@ public class WebChannelEndpoint {
     @OnClose
     public void onClose(Session session, CloseReason reason) {
         LOG.warn("session {} closed: {}", session.getId(), reason);
-        WebChannelDispatcher.unsubscribe(this);
+        PipeDispatcher.unsubscribe(this);
     }
 
     @OnMessage
-    public void onMessage(Session session, WebMessage message) {
-        message.setSender(WebChannelDispatcher.getId(user, wm));
+    public void onMessage(Session session, Message message) {
+        message.setSender(PipeDispatcher.getId(user, wm));
         LOG.debug("new MESSAGE from session {}: {}", session.getId(), message);
-        WebChannelDispatcher.send(message);
+        PipeDispatcher.send(message);
     }
 
     @OnError
@@ -69,7 +69,6 @@ public class WebChannelEndpoint {
     }
 
     /**
-     *
      * @return
      */
     public long getUser() {
@@ -77,7 +76,6 @@ public class WebChannelEndpoint {
     }
 
     /**
-     *
      * @return
      */
     public String getWM() {
@@ -85,7 +83,6 @@ public class WebChannelEndpoint {
     }
 
     /**
-     *
      * @return
      */
     public Session getSession() {

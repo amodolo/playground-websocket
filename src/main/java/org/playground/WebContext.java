@@ -1,6 +1,6 @@
 package org.playground;
 
-import org.playground.endpoint.WebChannelDispatcher;
+import org.playground.endpoint.PipeDispatcher;
 import org.playground.services.MonitorService;
 
 import javax.servlet.ServletContextEvent;
@@ -9,7 +9,7 @@ import javax.servlet.ServletContextListener;
 public class WebContext implements ServletContextListener {
     @Override
     public void contextInitialized(ServletContextEvent sce) {
-        WebChannelDispatcher.start();
+        PipeDispatcher.start();
         MonitorService.start();
 
         String cookiePath = sce.getServletContext().getContextPath() + "/w";
@@ -18,7 +18,7 @@ public class WebContext implements ServletContextListener {
 
     @Override
     public void contextDestroyed(ServletContextEvent sce) {
-        WebChannelDispatcher.stop();
+        PipeDispatcher.stop();
         MonitorService.stop();
     }
 }
