@@ -1,5 +1,7 @@
 package org.playground.models;
 
+import org.playground.endpoint.PipeDispatcher;
+
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -11,20 +13,22 @@ public class WindowManagers {
 
     public static void register(WindowManager wm) {
         wms.put(wm.getId(), wm);
+        PipeDispatcher.touch(wm);
     }
 
     public static void unregister(WindowManager wm) {
         wms.remove(wm.getId());
+        PipeDispatcher.untouch(wm);
     }
 
     public static Set<WindowManager> getAll() {
         return new HashSet<>(wms.values());
     }
 
-    public static Set<WindowManager> getUsersWm(User user) {
+    public static Set<WindowManager> getUsersWm(long userId) {
         return wms.values()
                 .stream()
-                .filter(wm -> wm.getUser().equals(user))
+                .filter(wm -> wm.getUser().getId() == userId)
                 .collect(Collectors.toSet());
     }
 }

@@ -3,13 +3,20 @@
  */
 class ClientEndpoint {
 
+     #options = {
+         autoReconnect: true,
+         maxRetries: 10
+     };
+     #connectionOpen = false;
+     #retry = 0;
+
     /**
      * TODO
      * @param {string} channel 
      */
-    constructor(channel, autoReconnect) {
+    constructor(channel, options = {}) {
         this.channel = channel;
-        this.autoReconnect = autoReconnect;
+        this.#options = {...this.#options, ...options};
         this.eventHandlers = {}
     }
 
@@ -18,7 +25,7 @@ class ClientEndpoint {
      */
     connect() {
         this.socket = new WebSocket(this.#getUrl());
-        this.connectionOpen = true;
+        this.#connectionOpen = true;
         this.#attachHandlers();
     }
 
@@ -27,7 +34,7 @@ class ClientEndpoint {
      */
     disconnect() {
         if (!!this.socket) {
-            this.connectionOpen = false;
+            this.#connectionOpen = false;
             this.socket.close();
         }
     }
@@ -36,8 +43,10 @@ class ClientEndpoint {
      * TODO
      */
     reconnect() {
-        this.disconnect();
-        this.connect();
+        if (this.#retry++ < this.#options.maxRetries) {
+            this.disconnect();
+            this.connect();
+        }
     }
 
     /**
@@ -63,7 +72,7 @@ class ClientEndpoint {
     send(type, user, wm, content) {
         if (this.isOpen()) {
             let target = user;
-            if (wm) target += "|" + wm;
+            if (wm) target += "_" + wm;
             this.socket.send(JSON.stringify({
                 "type": type,
                 "content": content,
@@ -80,8 +89,8 @@ class ClientEndpoint {
     on(event, handler) {
         switch (event) {
             case 'open':
-                if (!!this.socket) this.socket.onopen = handler;
-                else this.onOpenHandler = handler;
+                if (!!this.socket) this.socket.onopen = (event) => this.#innerOnOpen(event, handler);
+                else this.onOpenHandler = (event) => this.#innerOnOpen(event, handler);
                 break;
             case 'error':
                 if (!!this.socket) this.socket.onerror = handler;
@@ -117,8 +126,13 @@ class ClientEndpoint {
         if (!!this.onCloseHandler) this.socket.onclose = this.onCloseHandler;
     }
 
+    #innerOnOpen(event, handler) {
+        this.#retry = 0;
+        handler(event);
+    }
+
     #innerOnClose(event, handler) {
         handler(event);
-        if (this.connectionOpen) this.reconnect();
+        if (this.#connectionOpen) this.reconnect();
     }
 }

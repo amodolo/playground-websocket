@@ -62,7 +62,7 @@ public class Message implements Serializable {
      * @return
      */
     long getTargetUser() {
-        int i = target.indexOf('|');
+        int i = target.indexOf('_');
         if (i != -1) return Long.parseLong(target.substring(0, i));
         else return Long.parseLong(target);
     }
@@ -71,7 +71,7 @@ public class Message implements Serializable {
      * @return
      */
     String getTargetWm() {
-        int i = target.indexOf('|');
+        int i = target.indexOf('_');
         if (i != -1) return target.substring(i + 1);
         else return null;
     }

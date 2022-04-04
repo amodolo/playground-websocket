@@ -8,7 +8,7 @@ public class WindowManager {
     private final User user;
 
     public WindowManager(User user) {
-        this.id = "wm_"+generator.incrementAndGet();
+        this.id = "wm" + generator.incrementAndGet();
         this.user = user;
     }
 

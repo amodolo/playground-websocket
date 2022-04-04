@@ -79,7 +79,7 @@ function logout() {
 
 function showCallModal(modal, message) {
     let log = document.getElementById("log");
-    let sender = message.sender.split('|');
+    let sender = message.sender.split('_');
     let user = sender[0];
     document.getElementById('call-modal-title').innerHTML = "Incoming call from user " + user;
     document.getElementById('call-modal-text').innerHTML = message.content;
@@ -93,14 +93,14 @@ function hideCallModal(modal) {
 
 function logMissedCall(message) {
     let log = document.getElementById("log");
-    let sender = message.sender.split('|');
+    let sender = message.sender.split('_');
     let user = sender[0];
     let wm = sender[1];
     log.innerHTML += `missed call from user ${user}\n`;
 }
 
 function logMessage(message) {
-    let sender = message.sender.split('|');
+    let sender = message.sender.split('_');
     let user = sender[0];
     let wm = sender[1];
     log.innerHTML += `user ${user} from ${wm} says: ${message.content}\n`;
