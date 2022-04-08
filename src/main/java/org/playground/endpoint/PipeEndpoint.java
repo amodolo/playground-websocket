@@ -14,7 +14,7 @@ import java.net.UnknownHostException;
  *
  */
 @ServerEndpoint(
-        value = "/w/pipe/{wm}",
+        value = "/w/old/pipe/{wm}",
         decoders = MessageDecoder.class,
         configurator = PipeConfigurator.class
 )
@@ -36,7 +36,7 @@ public class PipeEndpoint {
         this.user = (long) session.getUserProperties().get("user");
         this.wm = wm;
         this.session = session;
-        session.getUserProperties().put("wm", wm);
+//        session.getUserProperties().put("wm", wm);
         session.setMaxIdleTimeout(0);
 
         PipeDispatcher.subscribe(this);
