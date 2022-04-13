@@ -39,7 +39,7 @@ use this command to deploy the application within a kubernetes cluster
 ```
 kubectl apply -f .\kube-deployment.yaml    
 ```
-the application will be deployed at the following url: http://localhost:8080/playground/w/login
+the application will be deployed at the following url: http://localhost/playground/w/login
 
 refers to [User Credential](#user-credentials) section to get the login credentials.
 
