@@ -32,6 +32,8 @@ the application will be deployed at the following url: http://localhost:8080/pla
 refers to [User Credential](#user-credentials) section to get the login credentials.
 
 ## Run into Kubernetes environment
+> before start, make sure to have installed the nginx-ingress controller following [this guide](https://kubernetes.github.io/ingress-nginx/deploy/)
+
 use this command to deploy the application within a kubernetes cluster
 
 ```
