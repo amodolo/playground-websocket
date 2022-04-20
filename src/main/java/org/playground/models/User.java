@@ -58,4 +58,15 @@ public class User implements Serializable, HttpSessionBindingListener {
     public void valueUnbound(HttpSessionBindingEvent event) {
         WebSessions.unregister(event.getSession());
     }
+
+    @Override
+    public String toString() {
+        return "User{" +
+                "id=" + id +
+                ", username='" + username + '\'' +
+                ", password='" + password + '\'' +
+                ", name='" + name + '\'' +
+                ", surname='" + surname + '\'' +
+                '}';
+    }
 }

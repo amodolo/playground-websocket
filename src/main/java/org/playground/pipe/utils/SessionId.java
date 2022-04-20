@@ -1,8 +1,28 @@
 package org.playground.pipe.utils;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
+
 public class SessionId {
-    private final long userId;
-    private final String appId;
+    private long userId;
+    private String appId;
+
+    @SuppressWarnings("unused")
+    public SessionId() {
+    }
+
+    @SuppressWarnings("unused")
+    @JsonCreator
+    public SessionId(String value) {
+        String[] values;
+        if (value != null && !value.isEmpty()) {
+            values = value.split("_", 2);// 1_2_3
+            this.userId = Long.parseLong(values[0]);
+            if (values.length > 1) {
+                appId = values[1];
+            }
+        }
+    }
 
     public SessionId(long userId, String appId) {
         this.userId = userId;
@@ -17,6 +37,7 @@ public class SessionId {
         return appId;
     }
 
+    @JsonValue
     public String getId() {
         String id = Long.toString(userId);
         if (appId != null) id += "_" + appId;
@@ -39,5 +60,13 @@ public class SessionId {
         int result = (int) (userId ^ (userId >>> 32));
         result = 31 * result + appId.hashCode();
         return result;
+    }
+
+    @Override
+    public String toString() {
+        return "SessionId{" +
+                "userId=" + userId +
+                ", appId='" + appId + '\'' +
+                '}';
     }
 }

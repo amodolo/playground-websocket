@@ -21,8 +21,8 @@ import java.util.UUID;
 public class PipeDispatcher {
 
     private static final Logger LOG = LogManager.getLogger();
-    private static final String KEY_PREFIX = "geocall.dispatcher:";
-    private static final String CHANNEL_PREFIX = KEY_PREFIX + ":ch:";
+    private static final String KEY_PREFIX = "geocall:dispatcher:";
+    private static final String CHANNEL_PREFIX = KEY_PREFIX + "ch:";
     private static final Map<String, Session> registry = new HashMap<>();
 
     private static Thread subscriberThread;

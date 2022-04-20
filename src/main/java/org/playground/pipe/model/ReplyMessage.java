@@ -10,4 +10,9 @@ public abstract class ReplyMessage implements Message {
     public Message getOriginal() {
         return original;
     }
+
+    @Override
+    public String getType() {
+        return Message.REPLY;
+    }
 }

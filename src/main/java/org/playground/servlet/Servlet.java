@@ -12,11 +12,17 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.net.InetAddress;
-import java.util.List;
-import java.util.stream.Collectors;
 
 @WebServlet("/w/app")
 public class Servlet extends HttpServlet {
+
+    private final WindowManagers windowManagers;
+
+    public Servlet() {
+        //TODO: CDI will inject this dependency
+        windowManagers = WindowManagers.getInstance();
+    }
+
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         if (req.getSession(false) == null) {
@@ -24,7 +30,7 @@ public class Servlet extends HttpServlet {
         } else {
             User user = (User) req.getSession(false).getAttribute("user");
             WindowManager wm = new WindowManager(user);
-            WindowManagers.register(wm);
+            windowManagers.register(wm);
 
             req.setAttribute("id", user.getId());
             req.setAttribute("name", user.getName());
@@ -47,11 +53,7 @@ public class Servlet extends HttpServlet {
     }
 
     private void purgeUserWM(User user) {
-        List<WindowManager> wms = WindowManagers.getAll()
-                .stream()
-                .filter(wm -> wm.getUser().equals(user))
-                .collect(Collectors.toList());
-
-        for (WindowManager wm : wms) WindowManagers.unregister(wm);
+        windowManagers.getUsersWindowManager(user.getId())
+                .forEach(windowManagers::unregister);
     }
 }

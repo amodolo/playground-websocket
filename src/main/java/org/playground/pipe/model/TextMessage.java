@@ -2,10 +2,15 @@ package org.playground.pipe.model;
 
 import org.playground.pipe.utils.SessionId;
 
+import java.util.Objects;
+
 public class TextMessage implements Message {
-    private final String content;
+    private String content;
     private SessionId sender;
-    private final SessionId target;
+    private SessionId target;
+
+    @SuppressWarnings("unused")
+    public TextMessage() {}
 
     public TextMessage(String content, SessionId sender, SessionId target) {
         this.content = content;
@@ -29,12 +34,34 @@ public class TextMessage implements Message {
     }
 
     @Override
-    public void setSender(SessionId sender) {
-        this.sender = sender;
+    public String getContent() {
+        return content;
+    }
+    @Override
+    public String getType() {
+        return Message.MSG;
     }
 
     @Override
-    public String getContent() {
-        return content;
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        TextMessage message = (TextMessage) o;
+        return content.equals(message.content) && sender.equals(message.sender) && target.equals(message.target) && getType().equals(message.getType());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(content, sender, target, getType());
+    }
+
+    @Override
+    public String toString() {
+        return "TextMessage{" +
+                "content='" + content + '\'' +
+                ", sender=" + sender +
+                ", target=" + target +
+                ", type=" + getType() +
+                '}';
     }
 }

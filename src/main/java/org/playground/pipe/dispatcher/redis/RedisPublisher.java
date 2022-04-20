@@ -12,47 +12,68 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.Transaction;
 
 import javax.websocket.EncodeException;
-import java.util.HashSet;
 import java.util.Set;
+
+import static org.playground.pipe.dispatcher.redis.RedisConstants.CHANNEL_PREFIX;
+import static org.playground.pipe.dispatcher.redis.RedisConstants.KEY_PREFIX;
 
 public class RedisPublisher implements Publisher {
 
     private static final Logger LOG = LogManager.getLogger();
-    private static final String KEY_PREFIX = RedisPubSubRunnable.KEY_PREFIX;
-    private static final String CHANNEL_PREFIX = RedisPubSubRunnable.CHANNEL_PREFIX;
     private final MessageEncoder encoder;
 
-    public RedisPublisher() {
-        this.encoder = new MessageEncoder();
+    public RedisPublisher(MessageEncoder encoder) {
+        this.encoder = encoder;
     }
 
     @Override
-    public Set<DispatchError> send(Message message) {
+    public DispatchError send(Message message) {
+        LOG.trace("send(message={})", message);
         // TODO: cosa devo fare se non riesco a spedire il messaggio? il client deve tenere aperto il socket o viene chiuso?
-        Set<DispatchError> errors = new HashSet<>();
-
         try (Jedis client = RedisService.getClient()) {
             String key = KEY_PREFIX + message.getTarget().getUserId();
-            Set<String> apps = client.smembers(key);
-            if (message.getTarget().getAppId() == null) {
-                apps.forEach(app -> {
-                    DispatchError error = write(new SessionId(message.getTarget().getUserId(), app), message, client);
-                    if (error != null) errors.add(error);
-                });
-            } else if (apps.contains(message.getTarget().getAppId())) {
-                DispatchError error = write(message.getTarget(), message, client);
-                if (error != null) errors.add(error);
+            Set<String> apps = client.smembers(key); // when no member of the set is found, an empty set is returned
+            if (apps.isEmpty()) {
+                String errorMessage = "There are no windows managers registered at the moment for the recipient " + message.getTarget().getUserId();
+                LOG.warn(errorMessage);
+                return new DispatchError(message.getTarget(), errorMessage);
             } else {
-                String description = "unknown target "+message.getTarget().getAppId();
-                LOG.warn(description);
-                errors.add(new DispatchError(message.getTarget(), description));
+                LOG.trace("Registered window managers for the user key {}: {}", key, apps);
+                if (message.getTarget().getAppId() == null) {
+                    LOG.trace("Sending a message to all registered window managers for the recipient " + message.getTarget().getUserId());
+                    DispatchError dispatchError = null;
+                    boolean atLeastOneMessageCorrectlySent = false;
+                    for (String app : apps) {
+                        DispatchError error = write(new SessionId(message.getTarget().getUserId(), app), message, client);
+                        // TODO: solo l'ultimo DispatchError viene tornato? E' corretto?
+                        if (error != null)
+                            dispatchError = error;
+                        else
+                            atLeastOneMessageCorrectlySent = true;
+                    }
+
+                    if (!atLeastOneMessageCorrectlySent) {
+                        LOG.warn("No message has been sent to any window manager of the recipient");
+                        return dispatchError;
+                    } else {
+                        LOG.trace("The message has been sent to at least one window manager of the recipient");
+                        return null;
+                    }
+                } else if (apps.contains(message.getTarget().getAppId())) {
+                    LOG.trace("Sending a message to the registered window manager " + message.getTarget().getAppId() + " for the recipient " + message.getTarget().getUserId());
+                    return write(message.getTarget(), message, client);
+                } else {
+                    String description = "Unknown target " + message.getTarget().getAppId();
+                    LOG.warn(description);
+                    return new DispatchError(message.getTarget(), description);
+                }
             }
         }
-
-        return errors;
     }
 
+    //TODO: spostare in una classe dedicata come fatto con il RedisMessageConsumer?
     private DispatchError write(SessionId target, Message message, Jedis client) {
+        LOG.trace("write(target={}, message={}, client={})", target, message, client);
         try {
             boolean done = false;
             do {
@@ -65,6 +86,7 @@ public class RedisPublisher implements Publisher {
             //TODO: e se il server non risponde perchè giù? questo cicla all'infinito (magari ha senso avere un max retry)
         } catch (EncodeException e) {
             LOG.error("notification write error", e);
+            //TODO: capire come gestire gli errori nel contesto web-socket
             return new DispatchError(target, "notification write error", e);
         }
 

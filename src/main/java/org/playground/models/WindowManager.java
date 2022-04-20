@@ -19,4 +19,12 @@ public class WindowManager {
     public User getUser() {
         return user;
     }
+
+    @Override
+    public String toString() {
+        return "WindowManager{" +
+                "id='" + id + '\'' +
+                ", user=" + user +
+                '}';
+    }
 }
