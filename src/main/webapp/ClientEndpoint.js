@@ -10,23 +10,35 @@ class ClientEndpoint {
      #connectionOpen = false;
      #retry = 0;
 
+     #status = { DISCONNECTED: 0, CONNECTED: 1, AWAITING_RESPONSE: 2 };
+     #currentStatus = this.#status.DISCONNECTED;
+
     /**
      * TODO
      * @param {string} channel 
      */
-    constructor(channel, options = {}) {
-        this.channel = channel;
+    constructor(options = {}) {
         this.#options = {...this.#options, ...options};
         this.eventHandlers = {}
+        const savedStatus = parseInt(window.sessionStorage.getItem('CONNECTION_STATUS'));
+        window.addEventListener('beforeunload', this.disconnect);
+        if (savedStatus !== this.#status.DISCONNECTED) {
+            this.connect();
+        }
     }
 
     /**
      * TODO
      */
     connect() {
+        this.disconnect();
         this.socket = new WebSocket(this.#getUrl());
+        this.socket.onopen = this.#onOpen.bind(this);
+        this.socket.onmessage = this.#onMessage.bind(this);
+        this.socket.onclose = this.#onClose.bind(this);
+        this.socket.onerror = this.#onError.bind(this);
         this.#connectionOpen = true;
-        this.#attachHandlers();
+        window.sessionStorage.setItem('CONNECTION_STATUS', this.#status.CONNECTED);
     }
 
     /**
@@ -36,15 +48,15 @@ class ClientEndpoint {
         if (!!this.socket) {
             this.#connectionOpen = false;
             this.socket.close();
+            window.sessionStorage.setItem('CONNECTION_STATUS', this.#status.DISCONNECTED);
         }
     }
 
     /**
      * TODO
      */
-    reconnect() {
+    #reconnect() {
         if (this.#retry++ < this.#options.maxRetries) {
-            this.disconnect();
             this.connect();
         }
     }
@@ -67,9 +79,42 @@ class ClientEndpoint {
 
     /**
      * TODO
+     * @param {*} target 
+     */
+    cancelCall(user, wm) {
+        this.#send("CANCEL_CALL", user, wm, null);
+    }
+
+    /**
+     * TODO
+     * @param {*} target 
+     * @param {*} accepted 
+     */
+    sendCallResponse(user, wm, accepted) {
+        this.#send("CALL_RESPONSE", user, wm, accepted);
+    }
+
+    /**
+     * TODO
+     * @param {*} target 
+     */
+    call(user, wm) {
+        this.#send("CALL", user, wm, null);
+    }
+
+    /**
+     * TODO
+     * @param {*} target 
+     */
+    sendMessage(user, wm, msg) {
+        this.#send("TEXT", user, wm, msg);
+    }
+
+    /**
+     * TODO
      * @param {string} data 
      */
-    send(type, user, wm, content) {
+    #send(type, user, wm, content) {
         if (this.isOpen()) {
             let target = user;
             if (wm) target += "_" + wm;
@@ -89,20 +134,16 @@ class ClientEndpoint {
     on(event, handler) {
         switch (event) {
             case 'open':
-                if (!!this.socket) this.socket.onopen = (event) => this.#innerOnOpen(event, handler);
-                else this.onOpenHandler = (event) => this.#innerOnOpen(event, handler);
+                this.onOpenHandler = handler;
                 break;
             case 'error':
-                if (!!this.socket) this.socket.onerror = handler;
-                else this.onErrorHandler = handler;
+                this.onErrorHandler = handler;
                 break;
             case 'message':
-                if (!!this.socket) this.socket.onmessage = handler;
-                else this.onMessageHandler = handler;
+                this.onMessageHandler = handler;
                 break;
             case 'close':
-                if (!!this.socket) this.socket.onclose = (event) => this.#innerOnClose(event, handler);
-                else this.onCloseHandler = (event) => this.#innerOnClose(event, handler);
+                this.onCloseHandler = handler;
                 break;
             default:
             // nothing to do
@@ -114,25 +155,35 @@ class ClientEndpoint {
         let contextName = location.pathname.slice(1);
         let i = contextName.lastIndexOf('/');
         contextName = i !==-1 ? `/${contextName.substring(0,i)}` : `/${contextName}`
-        let channel = this.channel;
-        if (!channel.startsWith('/')) channel = `/${channel}`;
+        let channel = `/pipe/${wmId}`;
         return `${protocol}${location.host}${contextName}${channel}`;
     }
 
-    #attachHandlers() {
-        if (!!this.onOpenHandler) this.socket.onopen = this.onOpenHandler;
-        if (!!this.onErrorHandler) this.socket.onerror = this.onErrorHandler;
-        if (!!this.onMessageHandler) this.socket.onmessage = this.onMessageHandler;
-        if (!!this.onCloseHandler) this.socket.onclose = this.onCloseHandler;
-    }
-
-    #innerOnOpen(event, handler) {
+    #onOpen(event) {
         this.#retry = 0;
-        handler(event);
+        this.#currentStatus = this.#status.CONNECTED;
+        if (!!this.onOpenHandler) this.onOpenHandler(event);
     }
 
-    #innerOnClose(event, handler) {
-        handler(event);
+    #onClose(event) {
+        debugger;
+        this.socket = null;
+        this.#currentStatus = this.#status.DISCONNECTED;
+        if (!!this.onCloseHandler) this.onCloseHandler(event);
         if (this.#connectionOpen) this.reconnect();
+    }
+
+    #onMessage(event) {
+        let type = JSON.parse(event.data).type;
+        if (type === 'callResponse') {
+            this.#currentStatus = this.#status.CONNECTED;
+        }
+        if (!!this.onMessageHandler) this.onMessageHandler(event);
+    }
+
+    #onError(event) {
+        // TODO log
+        if (!!this.onErrorHandler) this.onErrorHandler(event);
+
     }
 }

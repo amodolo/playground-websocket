@@ -1,18 +1,16 @@
 package org.playground.pipe.model;
 
-public abstract class ReplyMessage implements Message {
-    private final Message original;
+import org.playground.pipe.utils.SessionId;
 
-    public ReplyMessage(Message original) {
+public abstract class ReplyMessage<T> extends Message<T> {
+    private final Message<?> original;
+
+    public ReplyMessage(T content, SessionId sender, SessionId target, Message<?> original) {
+        super(content, sender, target);
         this.original = original;
     }
 
-    public Message getOriginal() {
+    public Message<?> getOriginal() {
         return original;
-    }
-
-    @Override
-    public String getType() {
-        return Message.REPLY;
     }
 }

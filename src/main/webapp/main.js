@@ -2,24 +2,30 @@ let client;
 
 function connect() {
     let modal;
-    client = new ClientEndpoint(`/pipe/${wmId}`);
+    client = new ClientEndpoint();
     client.on('message', (event) => {
+        //TODO quando ricevo una chiamta mi devo salvare lo user ed il wm dentro callerUser e callerWM
         var log = document.getElementById("log");
         console.log(event.data);
-        var message = event.data.startsWith("{") ? JSON.parse(event.data) : event.data;
-        if (message.type === "CALL") {
-            modal = new bootstrap.Modal(document.getElementById('call-modal'), {})
-            showCallModal(modal, message);
-        } else if (message.type === "CALL_MISSED") {
-            hideCallModal(modal);
-            logMissedCall(message);
-        } else if (message.type === "CALL_ACCEPTED" || message.type === "CALL_REJECTED") {
-            hideCallModal(modal);
-        } else if (message.type === "MSG") {
-            logMessage(message);
-        } else {
-             log.innerHTML += message + "\n";
-         }
+        var message = JSON.parse(event.data);
+
+        switch (message.action) {
+            case 'CANCEL_CALL':
+                hideCallModal(modal);
+                logMissedCall(message);
+                break;
+            case 'CALL_RESPONSE':
+                logCallResponse(message);
+                hideCallModal(modal); // to dismiss all panel of the receiver user
+                break;
+            case 'CALL':
+                modal = new bootstrap.Modal(document.getElementById('call-modal'), {})
+                showCallModal(modal, message);
+                break;
+            case 'TEXT':
+                logMessage(message);
+                break;
+        }
     });
     client.on("open", (event) => {
         document.getElementById("disconnect-btn").disabled = false;
@@ -44,16 +50,15 @@ function send() {
     var user = document.getElementById("user").value;
     var wm = document.getElementById("wm").value;
 
-    client.send("MSG", user, wm, content)
+    client.sendMessage(user, wm, content)
     return true;
 }
 
 function call() {
-    var content = document.getElementById("msg").value;
     var user = document.getElementById("user").value;
     var wm = document.getElementById("wm").value;
 
-    client.send("CALL", user, wm, content)
+    client.call(user, wm)
     return true;
 }
 
@@ -61,16 +66,18 @@ function closeCall() {
     var user = document.getElementById("user").value;
     var wm = document.getElementById("wm").value;
 
-    client.send("CALL_MISSED", user, wm, null)
+    client.cancelCall(user, wm)
     return true;
 }
 
 function acceptCall() {
-    client.send("CALL_ACCEPTED", userId, null, null)
+    client.sendCallResponse(callerUser, callerWM, true)
+    client.sendCallResponse(userId, null, true)
 }
 
 function rejectCall() {
-    client.send("CALL_REJECTED", userId, null, null)
+    client.sendCallResponse(callerUser, callerWM, false)
+    client.sendCallResponse(userId, null, false)
 }
 
 function logout() {
@@ -81,6 +88,9 @@ function showCallModal(modal, message) {
     let log = document.getElementById("log");
     let sender = message.sender.split('_');
     let user = sender[0];
+    let wm = sender[1];
+    this.callerUser = user;
+    this.callerWM = wm;
     document.getElementById('call-modal-title').innerHTML = "Incoming call from user " + user;
     document.getElementById('call-modal-text').innerHTML = message.content;
     modal.show();
@@ -104,4 +114,13 @@ function logMessage(message) {
     let user = sender[0];
     let wm = sender[1];
     log.innerHTML += `user ${user} from ${wm} says: ${message.content}\n`;
+}
+
+function logCallResponse(message) {
+    let sender = message.sender.split('_');
+    let user = sender[0];
+    let wm = sender[1];
+    let accepted = message.content;
+
+    log.innerHTML += `user ${user} from ${wm} has ${accepted ? 'accepted' : 'rejected'} the call\n`;
 }

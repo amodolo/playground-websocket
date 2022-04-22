@@ -2,14 +2,14 @@ package org.playground.pipe.model;
 
 import org.playground.pipe.utils.SessionId;
 
-public class TextMessage extends Message<String> {
+public class CancelCallMessage extends Message<Void> {
 
-    public TextMessage(String content, SessionId sender, SessionId target) {
+    public CancelCallMessage(Void content, SessionId sender, SessionId target) {
         super(content, sender, target);
     }
 
     @Override
     public String getAction() {
-        return TEXT;
+        return CANCEL_CALL;
     }
 }

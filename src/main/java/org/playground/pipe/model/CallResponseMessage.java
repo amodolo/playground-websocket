@@ -2,14 +2,13 @@ package org.playground.pipe.model;
 
 import org.playground.pipe.utils.SessionId;
 
-public class TextMessage extends Message<String> {
-
-    public TextMessage(String content, SessionId sender, SessionId target) {
+public class CallResponseMessage extends Message<Boolean> {
+    public CallResponseMessage(Boolean content, SessionId sender, SessionId target) {
         super(content, sender, target);
     }
 
     @Override
     public String getAction() {
-        return TEXT;
+        return CALL_RESPONSE;
     }
 }

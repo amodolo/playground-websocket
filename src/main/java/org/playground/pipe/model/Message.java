@@ -5,25 +5,68 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import org.playground.pipe.utils.SessionId;
 
 import java.io.Serializable;
+import java.util.Objects;
 
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "action")
 @JsonSubTypes({
-        @JsonSubTypes.Type(value = TextMessage.class, name = "MSG"),
+        @JsonSubTypes.Type(value = TextMessage.class, name = Message.TEXT),
+        @JsonSubTypes.Type(value = CancelCallMessage.class, name = Message.CANCEL_CALL),
+        @JsonSubTypes.Type(value = CallResponseMessage.class, name = Message.CALL_RESPONSE),
+        @JsonSubTypes.Type(value = CallMessage.class, name = Message.CALL),
         @JsonSubTypes.Type(value = ReplyMessage.class, name = "REPLY") }
 )
-public interface Message extends Serializable {
+public abstract class Message<T> implements Serializable {
 
-    String MSG = "MSG";
-    String REPLY = "REPLY";
+    protected final T content;
+    protected final SessionId sender;
+    protected final SessionId target;
 
-    String getAction();
+    static final String TEXT = "TEXT";
+    static final String CANCEL_CALL = "CANCEL_CALL";
+    static final String CALL_RESPONSE = "CALL_RESPONSE";
+    static final String CALL = "CALL";
+    static final String REPLY = "REPLY";
 
-    @SuppressWarnings("unused")
-    SessionId getSender();
+    public Message(T content, SessionId sender, SessionId target) {
+        this.content = content;
+        this.sender = sender;
+        this.target = target;
+    }
 
-    SessionId getTarget();
+    public abstract String getAction();
 
-    String getContent();
+    public SessionId getSender() {
+        return sender;
+    }
 
-    String getType();
+
+    public SessionId getTarget() {
+        return target;
+    }
+
+    public T getContent() {
+        return content;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        TextMessage message = (TextMessage) o;
+        return content.equals(message.content) && sender.equals(message.sender) && target.equals(message.target);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(content, sender, target);
+    }
+
+    @Override
+    public String toString() {
+        return "Message{" +
+                "content='" + content + '\'' +
+                ", sender=" + sender +
+                ", target=" + target +
+                '}';
+    }
 }

@@ -2,12 +2,14 @@ package org.playground.pipe.model;
 
 import org.playground.pipe.utils.SessionId;
 
-public class ProxyMessage implements Message {
+public class ProxyMessage<T> extends Message<T> {
 
-    private final Message message;
+    private final Message<T> message;
     private final SessionId sender;
 
-    public ProxyMessage(Message message, SessionId sender) {
+
+    public ProxyMessage(Message<T> message, SessionId sender) {
+        super(message.getContent(), sender, message.getTarget());
         this.message = message;
         this.sender = sender;
     }
@@ -28,12 +30,7 @@ public class ProxyMessage implements Message {
     }
 
     @Override
-    public String getContent() {
+    public T getContent() {
         return message.getContent();
-    }
-
-    @Override
-    public String getType() {
-        return message.getType();
     }
 }
