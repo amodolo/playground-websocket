@@ -7,6 +7,10 @@ public class CallResponseMessage extends Message<Boolean> {
         super(content, sender, target);
     }
 
+    public CallResponseMessage() {
+        super();
+    }
+
     @Override
     public String getAction() {
         return CALL_RESPONSE;

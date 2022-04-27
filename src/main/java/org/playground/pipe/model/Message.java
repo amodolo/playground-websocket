@@ -7,19 +7,19 @@ import org.playground.pipe.utils.SessionId;
 import java.io.Serializable;
 import java.util.Objects;
 
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "action")
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "action", include = JsonTypeInfo.As.EXISTING_PROPERTY)
 @JsonSubTypes({
         @JsonSubTypes.Type(value = TextMessage.class, name = Message.TEXT),
         @JsonSubTypes.Type(value = CancelCallMessage.class, name = Message.CANCEL_CALL),
         @JsonSubTypes.Type(value = CallResponseMessage.class, name = Message.CALL_RESPONSE),
         @JsonSubTypes.Type(value = CallMessage.class, name = Message.CALL),
-        @JsonSubTypes.Type(value = ReplyMessage.class, name = "REPLY") }
+        @JsonSubTypes.Type(value = ReplyMessage.class, name = Message.REPLY)}
 )
 public abstract class Message<T> implements Serializable {
 
-    protected final T content;
-    protected final SessionId sender;
-    protected final SessionId target;
+    protected T content;
+    protected SessionId sender;
+    protected SessionId target;
 
     static final String TEXT = "TEXT";
     static final String CANCEL_CALL = "CANCEL_CALL";
@@ -31,6 +31,9 @@ public abstract class Message<T> implements Serializable {
         this.content = content;
         this.sender = sender;
         this.target = target;
+    }
+
+    public Message() {
     }
 
     public abstract String getAction();
@@ -52,7 +55,7 @@ public abstract class Message<T> implements Serializable {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        TextMessage message = (TextMessage) o;
+        Message<?> message = (Message<?>) o;
         return content.equals(message.content) && sender.equals(message.sender) && target.equals(message.target);
     }
 
@@ -63,7 +66,7 @@ public abstract class Message<T> implements Serializable {
 
     @Override
     public String toString() {
-        return "Message{" +
+        return getClass().getName() + "{" +
                 "content='" + content + '\'' +
                 ", sender=" + sender +
                 ", target=" + target +

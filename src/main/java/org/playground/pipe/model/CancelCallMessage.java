@@ -8,6 +8,10 @@ public class CancelCallMessage extends Message<Void> {
         super(content, sender, target);
     }
 
+    public CancelCallMessage() {
+        super();
+    }
+
     @Override
     public String getAction() {
         return CANCEL_CALL;

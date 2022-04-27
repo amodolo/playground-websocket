@@ -8,6 +8,10 @@ public class CallMessage extends Message<Void> {
         super(content, sender, target);
     }
 
+    public CallMessage() {
+        super();
+    }
+
     @Override
     public String getAction() {
         return CALL;

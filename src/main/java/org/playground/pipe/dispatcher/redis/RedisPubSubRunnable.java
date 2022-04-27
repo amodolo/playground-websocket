@@ -28,7 +28,11 @@ public class RedisPubSubRunnable implements Runnable {
         public void onMessage(String channel, String message) {
             if (channel.startsWith(CHANNEL_PREFIX)) {
                 LOG.trace("Incoming message {} for channel {} is interesting, so the subscriber associated to this channel will be notified about that", message, channel);
-                subscribers.get(channel).onMessage();
+                Subscriber subscriber = subscribers.get(channel);
+                if (subscriber != null) {
+                    LOG.trace("Sending the message {} to the recipient subscriber {}", message, subscriber);
+                    subscriber.onMessage();
+                }
             } else
                 LOG.trace("Incoming message {} for channel {} is not interesting", message, channel);
         }

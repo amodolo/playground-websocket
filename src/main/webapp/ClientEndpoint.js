@@ -5,7 +5,8 @@ class ClientEndpoint {
 
      #options = {
          autoReconnect: true,
-         maxRetries: 10
+         maxRetries: 10,
+         logEnabled: true
      };
      #connectionOpen = false;
      #retry = 0;
@@ -31,6 +32,7 @@ class ClientEndpoint {
      * TODO
      */
     connect() {
+        this.#log("connect()");
         this.disconnect();
         this.socket = new WebSocket(this.#getUrl());
         this.socket.onopen = this.#onOpen.bind(this);
@@ -45,9 +47,11 @@ class ClientEndpoint {
      * TODO
      */
     disconnect() {
+        this.#log("disconnect()");
         if (!!this.socket) {
             this.#connectionOpen = false;
             this.socket.close();
+            this.#currentStatus = this.#status.DISCONNECTED;
             window.sessionStorage.setItem('CONNECTION_STATUS', this.#status.DISCONNECTED);
         }
     }
@@ -56,7 +60,9 @@ class ClientEndpoint {
      * TODO
      */
     #reconnect() {
+        this.#log("reconnect()");
         if (this.#retry++ < this.#options.maxRetries) {
+            this.#log(`retry is ${this.#retry}`);
             this.connect();
         }
     }
@@ -82,7 +88,9 @@ class ClientEndpoint {
      * @param {*} target 
      */
     cancelCall(user, wm) {
+        this.#log(`cancelCall(user=${user}, wm=${wm})`);
         this.#send("CANCEL_CALL", user, wm, null);
+        this.#currentStatus = this.#status.CONNECTED;
     }
 
     /**
@@ -91,6 +99,7 @@ class ClientEndpoint {
      * @param {*} accepted 
      */
     sendCallResponse(user, wm, accepted) {
+        this.#log(`sendCallResponse(user=${user}, wm=${wm}, accepted=${accepted})`);
         this.#send("CALL_RESPONSE", user, wm, accepted);
     }
 
@@ -99,7 +108,9 @@ class ClientEndpoint {
      * @param {*} target 
      */
     call(user, wm) {
+        this.#log(`call(user=${user}, wm=${wm})`);
         this.#send("CALL", user, wm, null);
+        this.#currentStatus = this.#status.AWAITING_RESPONSE;
     }
 
     /**
@@ -107,6 +118,7 @@ class ClientEndpoint {
      * @param {*} target 
      */
     sendMessage(user, wm, msg) {
+        this.#log(`sendMessage(user=${user}, wm=${wm}, msg=${msg})`);
         this.#send("TEXT", user, wm, msg);
     }
 
@@ -114,12 +126,13 @@ class ClientEndpoint {
      * TODO
      * @param {string} data 
      */
-    #send(type, user, wm, content) {
+    #send(action, user, wm, content) {
+        this.#log(`send(action=${action}, user=${user}, wm=${wm}, content=${content})`);
         if (this.isOpen()) {
-            let target = user;
+            let target = `${user}`;
             if (wm) target += "_" + wm;
             this.socket.send(JSON.stringify({
-                "type": type,
+                "action": action,
                 "content": content,
                 "target": target
             }));
@@ -156,34 +169,41 @@ class ClientEndpoint {
         let i = contextName.lastIndexOf('/');
         contextName = i !==-1 ? `/${contextName.substring(0,i)}` : `/${contextName}`
         let channel = `/pipe/${wmId}`;
-        return `${protocol}${location.host}${contextName}${channel}`;
+        let url = `${protocol}${location.host}${contextName}${channel}`;
+        this.#log(`Web-socket URL is ${url}`);
+        return url;
     }
 
     #onOpen(event) {
+        this.#log(`onOpen(event=${event.data})`);
         this.#retry = 0;
         this.#currentStatus = this.#status.CONNECTED;
         if (!!this.onOpenHandler) this.onOpenHandler(event);
     }
 
     #onClose(event) {
-        debugger;
+        this.#log(`onClose(event=${event.data})`);
         this.socket = null;
         this.#currentStatus = this.#status.DISCONNECTED;
         if (!!this.onCloseHandler) this.onCloseHandler(event);
-        if (this.#connectionOpen) this.reconnect();
+        if (this.#connectionOpen) this.#reconnect();
     }
 
     #onMessage(event) {
-        let type = JSON.parse(event.data).type;
-        if (type === 'callResponse') {
+        this.#log(`onMessage(event=${event.data})`);
+        let action = JSON.parse(event.data).action;
+        if (action === 'CALL_RESPONSE') {
             this.#currentStatus = this.#status.CONNECTED;
         }
         if (!!this.onMessageHandler) this.onMessageHandler(event);
     }
 
     #onError(event) {
-        // TODO log
+        this.#log(`onError(event=${event.data})`);
         if (!!this.onErrorHandler) this.onErrorHandler(event);
+    }
 
+    #log(message) {
+        if (!!this.#options.logEnabled) console.log(message);
     }
 }

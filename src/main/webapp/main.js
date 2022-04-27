@@ -1,13 +1,13 @@
 let client;
+let callerUser;
+let callerWM;
 
 function connect() {
     let modal;
-    client = new ClientEndpoint();
+    client = new ClientEndpoint({logEnabled: logEnabled});
     client.on('message', (event) => {
-        //TODO quando ricevo una chiamta mi devo salvare lo user ed il wm dentro callerUser e callerWM
-        var log = document.getElementById("log");
-        console.log(event.data);
-        var message = JSON.parse(event.data);
+        console.log(`Received message: ${event.data}`);
+        const message = JSON.parse(event.data);
 
         switch (message.action) {
             case 'CANCEL_CALL':
@@ -20,6 +20,10 @@ function connect() {
                 break;
             case 'CALL':
                 modal = new bootstrap.Modal(document.getElementById('call-modal'), {})
+                let sender = message.sender.split('_');
+                callerUser = sender[0];
+                callerWM = sender[1];
+                console.log(`caller user is ${callerUser}; caller WM is ${callerWM}`);
                 showCallModal(modal, message);
                 break;
             case 'TEXT':
@@ -88,9 +92,6 @@ function showCallModal(modal, message) {
     let log = document.getElementById("log");
     let sender = message.sender.split('_');
     let user = sender[0];
-    let wm = sender[1];
-    this.callerUser = user;
-    this.callerWM = wm;
     document.getElementById('call-modal-title').innerHTML = "Incoming call from user " + user;
     document.getElementById('call-modal-text').innerHTML = message.content;
     modal.show();

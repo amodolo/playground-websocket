@@ -95,6 +95,7 @@
         <script>
             userId = <%=request.getAttribute("id") %>
             wmId = '<%=request.getAttribute("wmId") %>'
+            logEnabled = <%=request.getAttribute("logEnabled") %>;
             document.title += " "+wmId;
             connect();
         </script>

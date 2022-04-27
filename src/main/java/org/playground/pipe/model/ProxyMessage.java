@@ -33,4 +33,12 @@ public class ProxyMessage<T> extends Message<T> {
     public T getContent() {
         return message.getContent();
     }
+
+    @Override
+    public String toString() {
+        return "ProxyMessage{" +
+                "message=" + message +
+                ", sender=" + sender +
+                '}';
+    }
 }

@@ -8,6 +8,10 @@ public class TextMessage extends Message<String> {
         super(content, sender, target);
     }
 
+    public TextMessage() {
+        super();
+    }
+
     @Override
     public String getAction() {
         return TEXT;

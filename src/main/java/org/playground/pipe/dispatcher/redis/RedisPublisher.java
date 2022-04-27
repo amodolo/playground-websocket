@@ -38,7 +38,7 @@ public class RedisPublisher implements Publisher {
                 LOG.warn(errorMessage);
                 return new DispatchError(message.getTarget(), errorMessage);
             } else {
-                LOG.trace("Registered window managers for the user key {}: {}", key, apps);
+                LOG.trace("Registered window managers for the user key '{}': {}", key, apps);
                 if (message.getTarget().getAppId() == null) {
                     LOG.trace("Sending a message to all registered window managers for the recipient " + message.getTarget().getUserId());
                     DispatchError dispatchError = null;

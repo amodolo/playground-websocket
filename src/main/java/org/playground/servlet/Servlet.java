@@ -37,6 +37,7 @@ public class Servlet extends HttpServlet {
             req.setAttribute("surname", user.getSurname());
             req.setAttribute("node", InetAddress.getLocalHost().toString());
             req.setAttribute("wmId", wm.getId());
+            req.setAttribute("logEnabled", true);
             req.getRequestDispatcher("/main.jsp").forward(req, resp);
         }
     }

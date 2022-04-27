@@ -16,7 +16,7 @@ import javax.websocket.EndpointConfig;
 public class MessageDecoder implements Decoder.Text<Message> {
 
     private static final Logger LOG = LogManager.getLogger();
-    private final ObjectMapper mapper = new ObjectMapper(); //TODO: ma viene istanziato ad ogni req o solo alla creazione dell'endpoint?
+    private final ObjectMapper mapper = new ObjectMapper();
 
     @Override
     public Message decode(String s) throws DecodeException {
