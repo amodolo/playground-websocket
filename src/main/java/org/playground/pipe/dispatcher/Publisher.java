@@ -4,5 +4,5 @@ import org.playground.pipe.model.DispatchError;
 import org.playground.pipe.model.Message;
 
 public interface Publisher {
-    DispatchError send(Message message);
+    DispatchError send(Message<?> message);
 }

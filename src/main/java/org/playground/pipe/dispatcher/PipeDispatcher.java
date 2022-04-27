@@ -2,44 +2,48 @@ package org.playground.pipe.dispatcher;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.playground.models.WindowManager;
 import org.playground.pipe.model.DispatchError;
 import org.playground.pipe.model.Message;
-import org.playground.pipe.utils.SessionId;
+import org.playground.pipe.utils.Pipe;
 
 import javax.websocket.Session;
 
-public class PipeDispatcher implements Publisher, Subscriber {
+public class PipeDispatcher {
 
     private static final Logger LOG = LogManager.getLogger();
     private final Publisher publisher;
     private final Subscriber subscriber;
+    private final Register register;
 
     public PipeDispatcher(PipeDispatcherFactory factory) {
         this.publisher = factory.createPublisher();
         this.subscriber = factory.createSubscriber();
+        this.register = factory.createRegister();
     }
 
-    @Override
-    public DispatchError send(Message message) {
+    public DispatchError send(Message<?> message) {
         LOG.trace("send(message={})", message);
         return publisher.send(message);
     }
 
-    @Override
-    public boolean subscribe(SessionId sessionId, Session session) {
-        LOG.trace("subscribe(sessionId={}, session={})", sessionId, session);
-        return subscriber.subscribe(sessionId, session);
+    public boolean subscribe(Pipe pipe, Session session) {
+        LOG.trace("subscribe(pipe={}, session={})", pipe, session);
+        return subscriber.subscribe(pipe, session);
     }
 
-    @Override
-    public boolean unsubscribe(SessionId sessionId, Session session) {
-        LOG.trace("unsubscribe(sessionId={}, session={})", sessionId, session);
-        return subscriber.unsubscribe(sessionId, session);
+    public boolean unsubscribe(Pipe pipe, Session session) {
+        LOG.trace("unsubscribe(pipe={}, session={})", pipe, session);
+        return subscriber.unsubscribe(pipe, session);
     }
 
-    @Override
-    public boolean onMessage() {
-        LOG.trace("onMessage()");
-        return subscriber.onMessage();
+    public boolean touch(WindowManager wm) {
+        LOG.trace("touch(windowManager={})", wm.getId());
+        return this.register.touch(wm);
+    }
+
+    public boolean deTouch(WindowManager wm) {
+        LOG.trace("deTouch(windowManager={})", wm.getId());
+        return this.register.deTouch(wm);
     }
 }

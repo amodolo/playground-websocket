@@ -1,10 +1,10 @@
 package org.playground.pipe.model;
 
-import org.playground.pipe.utils.SessionId;
+import org.playground.pipe.utils.Pipe;
 
 public class CancelCallMessage extends Message<Void> {
 
-    public CancelCallMessage(Void content, SessionId sender, SessionId target) {
+    public CancelCallMessage(Void content, Pipe sender, Pipe target) {
         super(content, sender, target);
     }
 

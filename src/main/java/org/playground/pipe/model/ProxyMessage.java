@@ -1,17 +1,15 @@
 package org.playground.pipe.model;
 
-import org.playground.pipe.utils.SessionId;
+import org.playground.pipe.utils.Pipe;
 
 public class ProxyMessage<T> extends Message<T> {
 
     private final Message<T> message;
-    private final SessionId sender;
 
 
-    public ProxyMessage(Message<T> message, SessionId sender) {
+    public ProxyMessage(Message<T> message, Pipe sender) {
         super(message.getContent(), sender, message.getTarget());
         this.message = message;
-        this.sender = sender;
     }
 
     @Override
@@ -20,12 +18,7 @@ public class ProxyMessage<T> extends Message<T> {
     }
 
     @Override
-    public SessionId getSender() {
-        return sender;
-    }
-
-    @Override
-    public SessionId getTarget() {
+    public Pipe getTarget() {
         return message.getTarget();
     }
 
@@ -40,5 +33,23 @@ public class ProxyMessage<T> extends Message<T> {
                 "message=" + message +
                 ", sender=" + sender +
                 '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+
+        ProxyMessage<?> that = (ProxyMessage<?>) o;
+
+        return message.equals(that.message);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + message.hashCode();
+        return result;
     }
 }

@@ -2,7 +2,7 @@ package org.playground.pipe.model;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import org.playground.pipe.utils.SessionId;
+import org.playground.pipe.utils.Pipe;
 
 import java.io.Serializable;
 import java.util.Objects;
@@ -18,8 +18,8 @@ import java.util.Objects;
 public abstract class Message<T> implements Serializable {
 
     protected T content;
-    protected SessionId sender;
-    protected SessionId target;
+    protected Pipe sender;
+    protected Pipe target;
 
     static final String TEXT = "TEXT";
     static final String CANCEL_CALL = "CANCEL_CALL";
@@ -27,23 +27,23 @@ public abstract class Message<T> implements Serializable {
     static final String CALL = "CALL";
     static final String REPLY = "REPLY";
 
-    public Message(T content, SessionId sender, SessionId target) {
+    protected Message() {
+    }
+
+    protected Message(T content, Pipe sender, Pipe target) {
         this.content = content;
         this.sender = sender;
         this.target = target;
     }
 
-    public Message() {
-    }
-
     public abstract String getAction();
 
-    public SessionId getSender() {
+    public Pipe getSender() {
         return sender;
     }
 
 
-    public SessionId getTarget() {
+    public Pipe getTarget() {
         return target;
     }
 

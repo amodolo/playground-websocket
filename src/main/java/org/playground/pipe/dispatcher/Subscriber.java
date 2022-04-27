@@ -1,6 +1,6 @@
 package org.playground.pipe.dispatcher;
 
-import org.playground.pipe.utils.SessionId;
+import org.playground.pipe.utils.Pipe;
 
 import javax.websocket.Session;
 
@@ -9,15 +9,7 @@ import javax.websocket.Session;
  */
 public interface Subscriber {
 
-    boolean subscribe(SessionId sessionId, Session session);
+    boolean subscribe(Pipe pipe, Session session);
 
-    boolean unsubscribe(SessionId sessionId, Session session);
-
-    /**
-     * Notifies the subscriber that there is a new message available for him.<br/>
-     * Returns {@code true} in case of successful result; {@code false} otherwise.
-     *
-     * @return {@code true} in case of successful result; {@code false} otherwise.
-     */
-    boolean onMessage();
+    boolean unsubscribe(Pipe pipe, Session session);
 }

@@ -2,7 +2,6 @@ package org.playground.pipe.dispatcher.redis;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.playground.pipe.dispatcher.Subscriber;
 import org.playground.services.RedisService;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPubSub;
@@ -14,7 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import static org.playground.pipe.dispatcher.redis.RedisConstants.CHANNEL_PREFIX;
 
-public class RedisPubSubRunnable implements Runnable {
+public class RedisSubscriberService implements Runnable {
 
     private static final Logger LOG = LogManager.getLogger();
     private final String loopback = "lo_" + UUID.randomUUID();
@@ -22,13 +21,13 @@ public class RedisPubSubRunnable implements Runnable {
      * Map&lt;String, Subscriber&gt; about the subscribers registered in Redis.<br/>
      * The key is the channel value, such as 'geocall:dispatcher:ch:1_wm1'.
      */
-    private final Map<String, Subscriber> subscribers = new ConcurrentHashMap<>();
+    private final Map<String, RedisSubscriber> subscribers = new ConcurrentHashMap<>();
     private final JedisPubSub pubSub = new JedisPubSub() {
         @Override
         public void onMessage(String channel, String message) {
             if (channel.startsWith(CHANNEL_PREFIX)) {
                 LOG.trace("Incoming message {} for channel {} is interesting, so the subscriber associated to this channel will be notified about that", message, channel);
-                Subscriber subscriber = subscribers.get(channel);
+                RedisSubscriber subscriber = subscribers.get(channel);
                 if (subscriber != null) {
                     LOG.trace("Sending the message {} to the recipient subscriber {}", message, subscriber);
                     subscriber.onMessage();
@@ -49,7 +48,7 @@ public class RedisPubSubRunnable implements Runnable {
         }
     }
 
-    public void subscribe(Subscriber subscriber, String channel) {
+    public void subscribe(RedisSubscriber subscriber, String channel) {
         LOG.trace("subscribe(subscriber={}, channel={})", subscriber, channel);
         // subscription to Redis
         this.pubSub.subscribe(channel);
@@ -59,7 +58,7 @@ public class RedisPubSubRunnable implements Runnable {
 
     public void unsubscribe(String channel) {
         LOG.trace("unsubscribe(channel={})", channel);
-        // unsubscription from Redis
+        // un-subscription from Redis
         this.pubSub.unsubscribe(channel);
         // updating the internal subscribers map
         this.subscribers.remove(channel);

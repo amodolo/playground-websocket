@@ -1,9 +1,10 @@
 package org.playground.pipe.model;
 
-import org.playground.pipe.utils.SessionId;
+import org.playground.pipe.utils.Pipe;
 
 public class CallResponseMessage extends Message<Boolean> {
-    public CallResponseMessage(Boolean content, SessionId sender, SessionId target) {
+
+    public CallResponseMessage(Boolean content, Pipe sender, Pipe target) {
         super(content, sender, target);
     }
 

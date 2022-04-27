@@ -1,10 +1,10 @@
 package org.playground.pipe.model;
 
-import org.playground.pipe.utils.SessionId;
+import org.playground.pipe.utils.Pipe;
 
 public class TextMessage extends Message<String> {
 
-    public TextMessage(String content, SessionId sender, SessionId target) {
+    public TextMessage(String content, Pipe sender, Pipe target) {
         super(content, sender, target);
     }
 

@@ -4,4 +4,6 @@ public interface PipeDispatcherFactory {
     Publisher createPublisher();
 
     Subscriber createSubscriber();
+
+    Register createRegister();
 }

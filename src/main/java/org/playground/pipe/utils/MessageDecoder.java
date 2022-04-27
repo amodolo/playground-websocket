@@ -13,13 +13,13 @@ import javax.websocket.EndpointConfig;
 /**
  *
  */
-public class MessageDecoder implements Decoder.Text<Message> {
+public class MessageDecoder implements Decoder.Text<Message<?>> {
 
     private static final Logger LOG = LogManager.getLogger();
     private final ObjectMapper mapper = new ObjectMapper();
 
     @Override
-    public Message decode(String s) throws DecodeException {
+    public Message<?> decode(String s) throws DecodeException {
         try {
             LOG.trace("Decoding {}", s);
             return mapper.readValue(s, Message.class);

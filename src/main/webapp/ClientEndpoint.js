@@ -11,7 +11,7 @@ class ClientEndpoint {
      #connectionOpen = false;
      #retry = 0;
 
-     #status = { DISCONNECTED: 0, CONNECTED: 1, AWAITING_RESPONSE: 2 };
+     #status = { DISCONNECTED: 0, CONNECTED: 1, CONNECTING: 2, AWAITING_RESPONSE: 3 };
      #currentStatus = this.#status.DISCONNECTED;
 
     /**
@@ -32,23 +32,25 @@ class ClientEndpoint {
      * TODO
      */
     connect() {
+        if (this.isConnected() || this.isConnecting()) return;
+
         this.#log("connect()");
-        this.disconnect();
+        window.sessionStorage.setItem('CONNECTION_STATUS', this.#status.CONNECTING);
         this.socket = new WebSocket(this.#getUrl());
         this.socket.onopen = this.#onOpen.bind(this);
         this.socket.onmessage = this.#onMessage.bind(this);
         this.socket.onclose = this.#onClose.bind(this);
         this.socket.onerror = this.#onError.bind(this);
         this.#connectionOpen = true;
-        window.sessionStorage.setItem('CONNECTION_STATUS', this.#status.CONNECTED);
+        window.sessionStorage.setItem('CONNECTION_STATUS', this.#status.CONNECTED); //TODO mettere nel onopen
     }
 
     /**
      * TODO
      */
     disconnect() {
-        this.#log("disconnect()");
-        if (!!this.socket) {
+        if (this.isConnected()) {
+            this.#log("disconnect()");
             this.#connectionOpen = false;
             this.socket.close();
             this.#currentStatus = this.#status.DISCONNECTED;
@@ -60,9 +62,10 @@ class ClientEndpoint {
      * TODO
      */
     #reconnect() {
-        this.#log("reconnect()");
         if (this.#retry++ < this.#options.maxRetries) {
+            this.#log("reconnect()");
             this.#log(`retry is ${this.#retry}`);
+            this.disconnect();
             this.connect();
         }
     }
@@ -79,8 +82,16 @@ class ClientEndpoint {
      * TODO
      * @returns
      */
-    isOpen() {
+    isConnected() {
         return this.getReadyState() === 1;
+    }
+
+    /**
+     * TODO
+     * @returns
+     */
+    isConnecting() {
+        return this.getReadyState() === 0;
     }
 
     /**
@@ -127,8 +138,8 @@ class ClientEndpoint {
      * @param {string} data 
      */
     #send(action, user, wm, content) {
-        this.#log(`send(action=${action}, user=${user}, wm=${wm}, content=${content})`);
-        if (this.isOpen()) {
+        if (this.isConnected()) {
+            this.#log(`send(action=${action}, user=${user}, wm=${wm}, content=${content})`);
             let target = `${user}`;
             if (wm) target += "_" + wm;
             this.socket.send(JSON.stringify({

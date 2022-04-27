@@ -17,7 +17,7 @@ class RedisMessageConsumer implements MessageConsumer {
     private static final Logger LOG = LogManager.getLogger();
 
     @Override
-    public Boolean apply(String recipientKey, Session recipientSession) {
+    public Boolean readAll(String recipientKey, Session recipientSession) {
         LOG.trace("apply(recipientKey={}, recipientSession={})", recipientKey, recipientSession);
         if (recipientSession == null || !recipientSession.isOpen()) {
             LOG.debug("the session {} is no longer open, impossible to read messages and send them to it", recipientSession);

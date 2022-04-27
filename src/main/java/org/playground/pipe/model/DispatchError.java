@@ -1,27 +1,27 @@
 package org.playground.pipe.model;
 
-import org.playground.pipe.utils.SessionId;
+import org.playground.pipe.utils.Pipe;
 
 import java.io.Serializable;
 
 public class DispatchError implements Serializable {
-    private final SessionId id;
+    private final Pipe pipe;
     private final String description;
     private final Exception exception;
 
     //FIXME: forse meglio accodare il messaggio dell'exception alla description? Questo costruttore viene usato solo in caso di EncodeException.... (vedi org.playground.pipe.dispatcher.redis.RedisPublisher.write)
-    public DispatchError(SessionId id, String description, Exception exception) {
-        this.id = id;
+    public DispatchError(Pipe pipe, String description, Exception exception) {
+        this.pipe = pipe;
         this.description = description;
         this.exception = exception;
     }
 
-    public DispatchError(SessionId id, String description) {
-        this(id, description, null);
+    public DispatchError(Pipe pipe, String description) {
+        this(pipe, description, null);
     }
 
-    public SessionId getId() {
-        return id;
+    public Pipe getPipe() {
+        return pipe;
     }
 
     public String getDescription() {
@@ -35,8 +35,9 @@ public class DispatchError implements Serializable {
     @Override
     public String toString() {
         return "DispatchError{" +
-                "id=" + id +
+                "pipe=" + pipe +
                 ", description='" + description + '\'' +
+                ", exception=" + exception +
                 '}';
     }
 }

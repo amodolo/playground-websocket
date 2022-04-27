@@ -2,8 +2,8 @@ package org.playground.models;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.playground.pipe.dispatcher.Register;
-import org.playground.pipe.dispatcher.redis.RedisRegister;
+import org.playground.pipe.dispatcher.PipeDispatcher;
+import org.playground.pipe.dispatcher.redis.RedisPipeDispatcherFactory;
 
 import java.util.Map;
 import java.util.Objects;
@@ -11,16 +11,15 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-public class WindowManagers implements Register {
+public class WindowManagers {
 
     private static final Logger LOG = LogManager.getLogger();
-    private static volatile WindowManagers INSTANCE;
+    private static WindowManagers INSTANCE;
     private final Map<String, WindowManager> windowManagers;
-    private final Register register;
+    private final PipeDispatcher dispatcher;
 
-    private WindowManagers(Register register) {
-        //TODO: CDI will inject this dependency
-        this.register = register;
+    private WindowManagers() {
+        this.dispatcher = new PipeDispatcher(new RedisPipeDispatcherFactory());
         this.windowManagers = new ConcurrentHashMap<>();
     }
 
@@ -28,7 +27,7 @@ public class WindowManagers implements Register {
         if (INSTANCE == null) {
             synchronized (WindowManagers.class) {
                 if (INSTANCE == null) {
-                    INSTANCE = new WindowManagers(new RedisRegister());
+                    INSTANCE = new WindowManagers();
                 }
             }
         }
@@ -38,39 +37,27 @@ public class WindowManagers implements Register {
     public boolean register(WindowManager windowManager) {
         LOG.trace("register(windowManager={})", windowManager);
         windowManagers.put(windowManager.getId(), windowManager);
-        return register.register(windowManager);
+        return dispatcher.touch(windowManager);
         //TODO: lo gestiremo con gli eventi e relativi BusinessTask quando rientreremo in Geocall!
     }
 
     public boolean unregister(WindowManager windowManager) {
         LOG.trace("unregister(windowManager={})", windowManager);
         windowManagers.remove(windowManager.getId());
-        return register.unregister(windowManager);
-    }
-
-    @Override
-    public boolean touch(WindowManager windowManager) {
-        LOG.trace("touch(windowManager={})", windowManager);
-        return register.touch(windowManager);
-    }
-
-    @Override
-    public boolean detouch(WindowManager windowManager) {
-        LOG.trace("detouch(windowManager={})", windowManager);
-        return register.detouch(windowManager);
+        return dispatcher.deTouch(windowManager);
     }
 
     public boolean touchAll() {
         LOG.trace("touchAll()");
         boolean[] result = new boolean[]{true};
-        windowManagers.values().forEach(windowManager -> result[0] &= this.touch(windowManager));
+        windowManagers.values().forEach(windowManager -> result[0] &= this.register(windowManager));
         return result[0];
     }
 
-    public boolean detouchAll() {
-        LOG.trace("detouchAll()");
+    public boolean unregisterAll() {
+        LOG.trace("unregisterAll()");
         boolean[] result = new boolean[]{true};
-        windowManagers.values().forEach(windowManager -> result[0] &= this.detouch(windowManager));
+        windowManagers.values().forEach(windowManager -> result[0] &= this.unregister(windowManager));
         return result[0];
     }
 

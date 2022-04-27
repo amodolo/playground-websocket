@@ -4,7 +4,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.playground.pipe.dispatcher.MessageConsumer;
 import org.playground.pipe.dispatcher.Subscriber;
-import org.playground.pipe.utils.SessionId;
+import org.playground.pipe.utils.Pipe;
 
 import javax.websocket.Session;
 import java.util.Map;
@@ -19,39 +19,42 @@ public class RedisSubscriber implements Subscriber {
 
     private static final Logger LOG = LogManager.getLogger();
     //TODO: spostare registry in RedisRemoteMessageBroker.getInstance() e renderla non static???
-    private static final Map<SessionId, Session> registry = new ConcurrentHashMap<>();
-    private final RedisPubSubRunnable runnable;
-    private SessionId sessionId;
+    private static final Map<Pipe, Session> registry = new ConcurrentHashMap<>();
+    private final RedisSubscriberService service;
+    private Pipe pipe;
     private final MessageConsumer messageConsumer;
 
-    public RedisSubscriber(RedisPubSubRunnable runnable, MessageConsumer messageConsumer) {
+    public RedisSubscriber(RedisSubscriberService service, MessageConsumer messageConsumer) {
         //TODO: CDI will inject this dependencies
-        this.runnable = runnable;
+        this.service = service;
         this.messageConsumer = messageConsumer;
     }
 
     @Override
-    public boolean subscribe(SessionId sessionId, Session session) {
-        LOG.trace("subscribe(sessionId={}, session={})", sessionId, session);
-        this.sessionId = sessionId;
-        registry.put(sessionId, session);
-        runnable.subscribe(this, CHANNEL_PREFIX + sessionId.getId());
-        LOG.trace("Trying to get possible available messages to dispatch to this subscriber {}", CHANNEL_PREFIX + sessionId.getId());
-        return messageConsumer.apply(sessionId.getId(), session);
+    public boolean subscribe(Pipe pipe, Session session) {
+        LOG.trace("subscribe(pipe={}, session={})", pipe, session);
+        this.pipe = pipe;
+        registry.put(pipe, session);
+        service.subscribe(this, CHANNEL_PREFIX + pipe.getId());
+        LOG.trace("Trying to get possible available messages to dispatch to this subscriber {}", CHANNEL_PREFIX + pipe.getId());
+        return messageConsumer.readAll(pipe.getId(), session);
     }
 
     @Override
-    public boolean unsubscribe(SessionId sessionId, Session session) {
-        LOG.trace("unsubscribe(sessionId={}, session={})", sessionId, session);
-        this.sessionId = null;
-        runnable.unsubscribe(CHANNEL_PREFIX + sessionId.getId());
-        registry.remove(sessionId);
+    public boolean unsubscribe(Pipe pipe, Session session) {
+        LOG.trace("unsubscribe(pipe={}, session={})", pipe, session);
+        this.pipe = null;
+        service.unsubscribe(CHANNEL_PREFIX + pipe.getId());
+        registry.remove(pipe);
         return true;
     }
 
-    @Override
-    public boolean onMessage() {
-        LOG.trace("New message from Redis for sessionId {}", this.sessionId);
-        return messageConsumer.apply(sessionId.getId(), registry.get(sessionId));
+    /**
+     * Notifies the subscriber that there is a new message available for him.
+     */
+    public void onMessage() {
+        LOG.trace("New message from Redis for pipe {}", this.pipe);
+        boolean read = messageConsumer.readAll(pipe.getId(), registry.get(pipe));
+        if (!read) LOG.warn("Some message for pipe {} could not been read", this.pipe);
     }
 }

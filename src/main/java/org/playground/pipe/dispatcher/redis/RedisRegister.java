@@ -15,18 +15,6 @@ public class RedisRegister implements Register {
     private static final Logger LOG = LogManager.getLogger();
 
     @Override
-    public boolean register(WindowManager windowManager) {
-        LOG.trace("register(windowManager={})", windowManager);
-        return touch(windowManager);
-    }
-
-    @Override
-    public boolean unregister(WindowManager windowManager) {
-        LOG.trace("unregister(windowManager={})", windowManager);
-        return detouch(windowManager);
-    }
-
-    @Override
     public boolean touch(WindowManager windowManager) {
         LOG.trace("touch(windowManager={})", windowManager);
         try (Jedis client = RedisService.getClient()) {
@@ -44,8 +32,8 @@ public class RedisRegister implements Register {
     }
 
     @Override
-    public boolean detouch(WindowManager windowManager) {
-        LOG.trace("detouch(windowManager={})", windowManager);
+    public boolean deTouch(WindowManager windowManager) {
+        LOG.trace("deTouch(windowManager={})", windowManager);
         try (Jedis client = RedisService.getClient()) {
             String key = KEY_PREFIX + windowManager.getUser().getId();
             LOG.trace("Removing the registration {}", key);

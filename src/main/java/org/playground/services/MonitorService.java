@@ -17,6 +17,10 @@ public class MonitorService {
         }
     };
 
+    private MonitorService() {
+        // this is a utility class containing only static methods
+    }
+
     public static void start() {
         LOG.trace("Starting monitor service");
         timer = new Timer("monitor");
@@ -26,7 +30,7 @@ public class MonitorService {
     public static void stop() {
         LOG.trace("Stopping monitor service");
         //FIXME: non è necessario fare anche il detouchAll per sicurezza?
-        WindowManagers.getInstance().detouchAll();
+        WindowManagers.getInstance().unregisterAll();
         timer.cancel();
     }
 
