@@ -4,7 +4,7 @@ let callerWM;
 
 function connect() {
     let modal;
-    client = new ClientEndpoint({logEnabled: logEnabled});
+    client = new ClientPipeEndpoint({logEnabled: logEnabled});
     client.on('message', (event) => {
         console.log(`Received message: ${event.data}`);
         const message = JSON.parse(event.data);
@@ -31,11 +31,11 @@ function connect() {
                 break;
         }
     });
-    client.on("open", (event) => {
+    client.on("open", () => {
         document.getElementById("disconnect-btn").disabled = false;
         document.getElementById("connect-btn").disabled = true;
     });
-    client.on("close", (event) => {
+    client.on("close", () => {
         document.getElementById("disconnect-btn").disabled = true;
         document.getElementById("connect-btn").disabled = false;
     });
@@ -45,7 +45,7 @@ function connect() {
 function disconnect() {
     if (client) {
         client.disconnect();
-        delete client;
+        client = null;
     }
 }
 
@@ -107,7 +107,7 @@ function logMissedCall(message) {
     let sender = message.sender.split('_');
     let user = sender[0];
     let wm = sender[1];
-    log.innerHTML += `missed call from user ${user}\n`;
+    log.innerHTML += `missed call from user ${user} @ ${wm}\n`;
 }
 
 function logMessage(message) {

@@ -1,7 +1,7 @@
 /**
  * TODO
  */
-class ClientEndpoint {
+class ClientPipeEndpoint {
 
      #options = {
          autoReconnect: true,
@@ -187,7 +187,7 @@ class ClientEndpoint {
 
     #onOpen(event) {
         this.#log(`onOpen(event=${event.data})`);
-        this.#retry = 0;
+        this.#retry = 0; //TODO: lo resettiamo dentro la callback di onMessage INITIALIZED
         this.#currentStatus = this.#status.CONNECTED;
         if (!!this.onOpenHandler) this.onOpenHandler(event);
     }

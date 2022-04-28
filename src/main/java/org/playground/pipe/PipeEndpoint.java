@@ -5,10 +5,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.playground.pipe.dispatcher.PipeDispatcher;
 import org.playground.pipe.dispatcher.redis.RedisPipeDispatcherFactory;
-import org.playground.pipe.model.DispatchError;
-import org.playground.pipe.model.Message;
-import org.playground.pipe.model.ProxyMessage;
-import org.playground.pipe.model.TextMessage;
+import org.playground.pipe.model.*;
 import org.playground.pipe.utils.MessageDecoder;
 import org.playground.pipe.utils.MessageEncoder;
 import org.playground.pipe.utils.PipeConfigurator;
@@ -62,25 +59,26 @@ public class PipeEndpoint {
         if (!subscribed) throw new IllegalStateException("subscription error");
 
         // notifying the client that the subscription has been successful
-        Message<?> message = new TextMessage("connected on node " + InetAddress.getLocalHost(), this.pipe, this.pipe);
-        DispatchError dispatchError = dispatcher.send(message);
-        if (dispatchError != null) throw new IllegalStateException(dispatchError.getDescription(), dispatchError.getException());
+        TextMessage message = new TextMessage("connected on node " + InetAddress.getLocalHost(), this.pipe, this.pipe);
+        session.getAsyncRemote().sendObject(message);
     }
 
     @OnClose
     public void onClose(Session session, CloseReason reason) {
         LOG.warn("session {} closed: {}", session.getId(), reason);
         boolean unsubscribed = dispatcher.unsubscribe(this.pipe, session);
-        if (!unsubscribed)
-            throw new IllegalStateException("unSubscription error"); //TODO: questo come viene recepito lato client?
+        if (!unsubscribed) LOG.warn("unable to unsubscribe pipe {}", pipe);
     }
 
     @OnMessage
-    public void onMessage(Session session, Message<?> message) { //TODO: riesco a veicolare il codice ed il testo dell'errore
+    public void onMessage(Session session, Message<?> message) {
         LOG.debug("new MESSAGE from session {}: {}", session.getId(), message);
         ProxyMessage<?> proxyMessage = new ProxyMessage<>(message, this.pipe);
         DispatchError dispatchError = dispatcher.send(proxyMessage);
-        if (dispatchError != null) throw new IllegalStateException(dispatchError.getDescription(), dispatchError.getException());
+        if (dispatchError != null) {
+            ErrorMessage errorMessage = new ErrorMessage(dispatchError, this.pipe, this.pipe);
+            session.getAsyncRemote().sendObject(errorMessage);
+        }
     }
 
     @OnError
