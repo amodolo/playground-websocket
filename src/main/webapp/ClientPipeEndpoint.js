@@ -67,7 +67,9 @@ class ClientPipeEndpoint {
             this.#log(`retry is ${this.#retry}`);
             this.disconnect();
             this.connect();
-        }
+        } else
+            //FIXME: utile un onMaxRetriesReached per avvertire il client che è stato raggiunto il numero massimo di tentativi di riconnessione?
+            this.#log(`Max retry number reached (${this.#retry - 1})`);
     }
 
     /**
@@ -187,7 +189,6 @@ class ClientPipeEndpoint {
 
     #onOpen(event) {
         this.#log(`onOpen(event=${event.data})`);
-        this.#retry = 0; //TODO: lo resettiamo dentro la callback di onMessage INITIALIZED
         this.#currentStatus = this.#status.CONNECTED;
         if (!!this.onOpenHandler) this.onOpenHandler(event);
     }
@@ -205,6 +206,9 @@ class ClientPipeEndpoint {
         let action = JSON.parse(event.data).action;
         if (action === 'CALL_RESPONSE') {
             this.#currentStatus = this.#status.CONNECTED;
+        } else if (action === 'INITIALIZED') {
+            this.#log("resetting retry");
+            this.#retry = 0;
         }
         if (!!this.onMessageHandler) this.onMessageHandler(event);
     }

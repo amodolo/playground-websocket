@@ -56,13 +56,13 @@
 
                 <div class="input-group mb-3">
                     <input type="text" class="form-control" placeholder="message..." id="msg">
-                    <button type="button" class="btn btn-primary" id="send" onclick="send();">
+                    <button type="button" class="btn btn-primary" id="send" onclick="send();" disabled>
                         <i class="bi bi-send"></i>
                     </button>
-                    <button type="button" class="btn btn-success" id="call" onclick="call();">
+                    <button type="button" class="btn btn-success" id="call" onclick="call();" disabled>
                         <i class="bi bi-telephone"></i>
                     </button>
-                    <button type="button" class="btn btn-danger" id="call" onclick="closeCall();">
+                    <button type="button" class="btn btn-danger" id="closeCall" onclick="closeCall();" disabled>
                         <i class="bi bi-telephone"></i>
                     </button>
                 </div>

@@ -18,16 +18,6 @@ public class ProxyMessage<T> extends Message<T> {
     }
 
     @Override
-    public Pipe getTarget() {
-        return message.getTarget();
-    }
-
-    @Override
-    public T getContent() {
-        return message.getContent();
-    }
-
-    @Override
     public String toString() {
         return "ProxyMessage{" +
                 "message=" + message +

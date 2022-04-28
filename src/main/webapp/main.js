@@ -27,17 +27,29 @@ function connect() {
                 showCallModal(modal, message);
                 break;
             case 'TEXT':
+            case 'INITIALIZED':
                 logMessage(message);
+                break;
+            case 'ERROR':
+                //TODO: manage the description message according to the provided code
+                logErrorMessage(message.content.description);
                 break;
         }
     });
     client.on("open", () => {
         document.getElementById("disconnect-btn").disabled = false;
         document.getElementById("connect-btn").disabled = true;
+        document.getElementById("send").disabled = false;
+        document.getElementById("call").disabled = false;
+        document.getElementById("closeCall").disabled = false;
     });
-    client.on("close", () => {
+    client.on("close", (event) => {
         document.getElementById("disconnect-btn").disabled = true;
         document.getElementById("connect-btn").disabled = false;
+        document.getElementById("send").disabled = true;
+        document.getElementById("call").disabled = true;
+        document.getElementById("closeCall").disabled = true;
+        console.log(`On close ${event.code} - ${event.reason}`);
     });
     client.connect();
 }
@@ -114,7 +126,13 @@ function logMessage(message) {
     let sender = message.sender.split('_');
     let user = sender[0];
     let wm = sender[1];
+    let log = document.getElementById("log");
     log.innerHTML += `user ${user} from ${wm} says: ${message.content}\n`;
+}
+
+function logErrorMessage(description) {
+    let log = document.getElementById("log");
+    log.innerHTML += `Error occurred: ${description}\n`;
 }
 
 function logCallResponse(message) {
@@ -123,5 +141,6 @@ function logCallResponse(message) {
     let wm = sender[1];
     let accepted = message.content;
 
+    let log = document.getElementById("log");
     log.innerHTML += `user ${user} from ${wm} has ${accepted ? 'accepted' : 'rejected'} the call\n`;
 }

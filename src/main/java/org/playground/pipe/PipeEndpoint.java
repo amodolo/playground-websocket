@@ -18,7 +18,6 @@ import javax.websocket.server.ServerEndpoint;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
-//TODO: cambiare {app} con {windowManager}?
 @ServerEndpoint(
         value = "/w/pipe/{name}",
         decoders = MessageDecoder.class,
@@ -27,6 +26,8 @@ import java.net.UnknownHostException;
 )
 public class PipeEndpoint {
     private static final Logger LOG = LogManager.getLogger();
+    protected static final String CONNECTED_ON_NODE = "connected on node ";
+    protected static final String SUBSCRIPTION_ERROR = "subscription error";
 
     private Pipe pipe;
     private final PipeDispatcher dispatcher;
@@ -56,10 +57,10 @@ public class PipeEndpoint {
 
         // subscribing this user ID + window manager ID to Redis
         boolean subscribed = dispatcher.subscribe(this.pipe, session);
-        if (!subscribed) throw new IllegalStateException("subscription error");
+        if (!subscribed) throw new IllegalStateException(SUBSCRIPTION_ERROR);
 
         // notifying the client that the subscription has been successful
-        TextMessage message = new TextMessage("connected on node " + InetAddress.getLocalHost(), this.pipe, this.pipe);
+        InitializedMessage message = new InitializedMessage(CONNECTED_ON_NODE + InetAddress.getLocalHost(), this.pipe);
         session.getAsyncRemote().sendObject(message);
     }
 
@@ -74,9 +75,11 @@ public class PipeEndpoint {
     public void onMessage(Session session, Message<?> message) {
         LOG.debug("new MESSAGE from session {}: {}", session.getId(), message);
         ProxyMessage<?> proxyMessage = new ProxyMessage<>(message, this.pipe);
-        DispatchError dispatchError = dispatcher.send(proxyMessage);
+        DispatchError dispatchError;
+        dispatchError = dispatcher.send(proxyMessage);
+
         if (dispatchError != null) {
-            ErrorMessage errorMessage = new ErrorMessage(dispatchError, this.pipe, this.pipe);
+            ErrorMessage errorMessage = new ErrorMessage(dispatchError.getErrorCode(), this.pipe);
             session.getAsyncRemote().sendObject(errorMessage);
         }
     }

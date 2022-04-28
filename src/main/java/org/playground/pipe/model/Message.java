@@ -14,7 +14,8 @@ import java.util.Objects;
         @JsonSubTypes.Type(value = CallResponseMessage.class, name = Message.CALL_RESPONSE),
         @JsonSubTypes.Type(value = CallMessage.class, name = Message.CALL),
         @JsonSubTypes.Type(value = ReplyMessage.class, name = Message.REPLY),
-        @JsonSubTypes.Type(value = ErrorMessage.class, name = Message.ERROR)
+        @JsonSubTypes.Type(value = ErrorMessage.class, name = Message.ERROR),
+        @JsonSubTypes.Type(value = ErrorMessage.class, name = Message.INITIALIZED)
 })
 public abstract class Message<T> implements Serializable {
 
@@ -28,6 +29,7 @@ public abstract class Message<T> implements Serializable {
     static final String CALL = "CALL";
     static final String REPLY = "REPLY";
     static final String ERROR = "ERROR";
+    static final String INITIALIZED = "INITIALIZED";
 
     protected Message() {
     }

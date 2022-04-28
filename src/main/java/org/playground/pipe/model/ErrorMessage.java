@@ -2,12 +2,13 @@ package org.playground.pipe.model;
 
 import org.playground.pipe.utils.Pipe;
 
-public class ErrorMessage extends Message<DispatchError> {
+public class ErrorMessage extends Message<DispatchError.ErrorCode> {
+    @SuppressWarnings("unused")
     public ErrorMessage() {
     }
 
-    public ErrorMessage(DispatchError content, Pipe sender, Pipe target) {
-        super(content, sender, target);
+    public ErrorMessage(DispatchError.ErrorCode content, Pipe senderAndTarget) {
+        super(content, senderAndTarget, senderAndTarget);
     }
 
     @Override

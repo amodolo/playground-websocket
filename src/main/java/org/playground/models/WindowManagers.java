@@ -50,14 +50,15 @@ public class WindowManagers {
     public boolean touchAll() {
         LOG.trace("touchAll()");
         boolean[] result = new boolean[]{true};
-        windowManagers.values().forEach(windowManager -> result[0] &= this.register(windowManager));
+        windowManagers.values().forEach(windowManager -> result[0] &= dispatcher.touch(windowManager));
         return result[0];
     }
 
     public boolean unregisterAll() {
         LOG.trace("unregisterAll()");
         boolean[] result = new boolean[]{true};
-        windowManagers.values().forEach(windowManager -> result[0] &= this.unregister(windowManager));
+        windowManagers.values().forEach(windowManager -> result[0] &= dispatcher.deTouch(windowManager));
+        windowManagers.clear();
         return result[0];
     }
 

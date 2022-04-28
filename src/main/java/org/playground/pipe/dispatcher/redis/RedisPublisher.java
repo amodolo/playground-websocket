@@ -36,9 +36,8 @@ public class RedisPublisher implements Publisher {
             String key = KEY_PREFIX + message.getTarget().getUserId();
             Set<String> targetIds = client.smembers(key); // when no member of the set is found, an empty set is returned
             if (targetIds.isEmpty()) {
-                String errorMessage = "There are no windows managers registered at the moment for the recipient " + message.getTarget().getUserId();
-                LOG.warn(errorMessage);
-                return new DispatchError(message.getTarget(), errorMessage);
+                LOG.warn("There are no windows managers registered at the moment for the recipient {}", message.getTarget().getUserId());
+                return new DispatchError(DispatchError.ErrorCode.NO_TARGET_AVAILABLE, message.getTarget());
             } else {
                 LOG.trace("Registered window managers for the user key '{}': {}", key, targetIds);
                 if (message.getTarget().getName() == null) {
@@ -48,9 +47,8 @@ public class RedisPublisher implements Publisher {
                     LOG.trace("Sending a message to the registered window manager {} for the recipient {}", message.getTarget().getName(), message.getTarget().getUserId());
                     return write(message.getTarget(), message, client);
                 } else {
-                    String description = "Unknown target " + message.getTarget().getName();
-                    LOG.warn(description);
-                    return new DispatchError(message.getTarget(), description);
+                    LOG.warn("Unknown target {}", message.getTarget().getName());
+                    return new DispatchError(DispatchError.ErrorCode.UNKNOWN_TARGET, message.getTarget());
                 }
             }
         }
@@ -86,7 +84,7 @@ public class RedisPublisher implements Publisher {
             } while (!done);
         } catch (EncodeException e) {
             LOG.error("notification write error", e);
-            return new DispatchError(target, "notification write error", e);
+            return new DispatchError(DispatchError.ErrorCode.INVALID_MESSAGE, target);
         }
 
         return null;
