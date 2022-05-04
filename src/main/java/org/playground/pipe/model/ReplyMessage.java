@@ -10,6 +10,7 @@ public abstract class ReplyMessage<S, T> extends Message<S> {
         this.original = original;
     }
 
+    @SuppressWarnings("unused")
     public Message<T> getOriginal() {
         return original;
     }

@@ -19,8 +19,19 @@ public class WindowManagers {
     private final PipeDispatcher dispatcher;
 
     private WindowManagers() {
-        this.dispatcher = new PipeDispatcher(new RedisPipeDispatcherFactory());
-        this.windowManagers = new ConcurrentHashMap<>();
+        this(new ConcurrentHashMap<>(), new PipeDispatcher(new RedisPipeDispatcherFactory()));
+    }
+
+    /**
+     * For test purposes only.
+     *
+     * @param windowManagers {@link Map}&lt;String, WindowManager&gt; to initialize the window managers map.
+     * @param dispatcher {@link PipeDispatcher} to initialize the dispatcher.
+     */
+    @SuppressWarnings("unused")
+    WindowManagers(Map<String, WindowManager> windowManagers, PipeDispatcher dispatcher) {
+        this.dispatcher = dispatcher;
+        this.windowManagers = windowManagers;
     }
 
     public static WindowManagers getInstance() {

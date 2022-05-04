@@ -1,5 +1,6 @@
 package org.playground.models;
 
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class WindowManager {
@@ -18,6 +19,19 @@ public class WindowManager {
 
     public User getUser() {
         return user;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        WindowManager that = (WindowManager) o;
+        return getId().equals(that.getId()) && getUser().equals(that.getUser());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getId(), getUser());
     }
 
     @Override

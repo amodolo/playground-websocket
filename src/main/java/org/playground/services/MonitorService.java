@@ -29,7 +29,6 @@ public class MonitorService {
 
     public static void stop() {
         LOG.trace("Stopping monitor service");
-        //FIXME: non è necessario fare anche il detouchAll per sicurezza?
         WindowManagers.getInstance().unregisterAll();
         timer.cancel();
     }

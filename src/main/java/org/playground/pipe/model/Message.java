@@ -60,12 +60,12 @@ public abstract class Message<T> implements Serializable {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Message<?> message = (Message<?>) o;
-        return content.equals(message.content) && sender.equals(message.sender) && target.equals(message.target);
+        return content.equals(message.content) && sender.equals(message.sender) && target.equals(message.target) && getAction().equals(message.getAction());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(content, sender, target);
+        return Objects.hash(content, sender, target, getAction());
     }
 
     @Override

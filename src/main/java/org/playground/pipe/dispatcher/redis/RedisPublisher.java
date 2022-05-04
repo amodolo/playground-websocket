@@ -22,6 +22,8 @@ import static org.playground.pipe.dispatcher.redis.RedisConstants.KEY_PREFIX;
 public class RedisPublisher implements Publisher {
 
     private static final Logger LOG = LogManager.getLogger();
+    protected static final String IMPOSSIBLE_TO_SEND_MESSAGE_TO_REDIS = "Max retry number reached: impossible to send the message ('%s') to target ('%s') in Redis";
+    protected static final long EXPIRATION_SECONDS = 60L;
     private final MessageEncoder encoder;
 
     public RedisPublisher(MessageEncoder encoder) {
@@ -34,27 +36,27 @@ public class RedisPublisher implements Publisher {
 
         try (Jedis client = RedisService.getClient()) {
             String key = KEY_PREFIX + message.getTarget().getUserId();
-            Set<String> targetIds = client.smembers(key); // when no member of the set is found, an empty set is returned
-            if (targetIds.isEmpty()) {
+            Set<String> targets = client.smembers(key); // when no member of the set is found, an empty set is returned
+            if (targets.isEmpty()) {
                 LOG.warn("There are no windows managers registered at the moment for the recipient {}", message.getTarget().getUserId());
-                return new DispatchError(DispatchError.ErrorCode.NO_TARGET_AVAILABLE, message.getTarget());
+                return new DispatchError(DispatchError.ErrorCode.NO_TARGET_AVAILABLE);
             } else {
-                LOG.trace("Registered window managers for the user key '{}': {}", key, targetIds);
+                LOG.trace("Registered window managers for the user key '{}': {}", key, targets);
                 if (message.getTarget().getName() == null) {
                     LOG.trace("Sending a message to all registered window managers for the recipient {}", message.getTarget().getUserId());
-                    return write(targetIds, message, client);
-                } else if (targetIds.contains(message.getTarget().getName())) {
+                    return write(targets, message, client);
+                } else if (targets.contains(message.getTarget().getName())) {
                     LOG.trace("Sending a message to the registered window manager {} for the recipient {}", message.getTarget().getName(), message.getTarget().getUserId());
                     return write(message.getTarget(), message, client);
                 } else {
                     LOG.warn("Unknown target {}", message.getTarget().getName());
-                    return new DispatchError(DispatchError.ErrorCode.UNKNOWN_TARGET, message.getTarget());
+                    return new DispatchError(DispatchError.ErrorCode.UNKNOWN_TARGET);
                 }
             }
         }
     }
 
-    private DispatchError write(Set<String> targets, Message<?> message, Jedis client) {
+    final DispatchError write(Set<String> targets, Message<?> message, Jedis client) {
         AtomicBoolean anyCorrectlySent = new AtomicBoolean(false);
         AtomicReference<DispatchError> dispatchError = new AtomicReference<>();
         targets.stream()
@@ -69,22 +71,25 @@ public class RedisPublisher implements Publisher {
         else return dispatchError.get();
     }
 
-    private DispatchError write(Pipe target, Message<?> message, Jedis client) {
+    final DispatchError write(Pipe target, Message<?> message, Jedis client) {
         LOG.trace("write(target={}, message={}, client={})", target, message, client);
         try {
             boolean done;
             int retry = 3;
+            String key = KEY_PREFIX + target.getId();
             do {
                 Transaction t = client.multi();
-                t.lpush(KEY_PREFIX + target.getId(), encoder.encode(message));
-                t.expire(KEY_PREFIX + target.getId(), 60L); // 1min
+                t.lpush(key, encoder.encode(message));
+                t.expire(key, EXPIRATION_SECONDS); // 1min
                 t.publish(CHANNEL_PREFIX + target.getId(), target.getId());
                 if (t.exec() != null) done = true;
-                else done = --retry < 0;
+                else done = --retry <= 0;
             } while (!done);
+            if (retry == 0)
+                throw new IllegalStateException(String.format(IMPOSSIBLE_TO_SEND_MESSAGE_TO_REDIS, message, key));
         } catch (EncodeException e) {
             LOG.error("notification write error", e);
-            return new DispatchError(DispatchError.ErrorCode.INVALID_MESSAGE, target);
+            return new DispatchError(DispatchError.ErrorCode.INVALID_MESSAGE);
         }
 
         return null;

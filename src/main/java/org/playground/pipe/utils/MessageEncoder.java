@@ -11,10 +11,25 @@ import javax.websocket.Encoder;
 import javax.websocket.EndpointConfig;
 import java.util.Objects;
 
+@SuppressWarnings("rawtypes")
 public class MessageEncoder implements Encoder.Text<Message> {
 
     private static final Logger LOG = LogManager.getLogger();
-    private final ObjectMapper mapper = new ObjectMapper();
+    protected static final String SERIALIZATION_ERROR = "serialization error";
+    private final ObjectMapper mapper;
+
+    public MessageEncoder() {
+        this(new ObjectMapper());
+    }
+
+    /**
+     * For test purposes only.
+     *
+     * @param mapper {@link ObjectMapper} instance.
+     */
+    private MessageEncoder(ObjectMapper mapper) {
+        this.mapper = mapper;
+    }
 
     @Override
     public String encode(Message message) throws EncodeException {
@@ -25,7 +40,7 @@ public class MessageEncoder implements Encoder.Text<Message> {
             LOG.trace("Encoded message is {}", result);
             return result;
         } catch (JsonProcessingException e) {
-            throw new EncodeException(message, "serialization error", e);
+            throw new EncodeException(message, SERIALIZATION_ERROR, e);
         }
     }
 

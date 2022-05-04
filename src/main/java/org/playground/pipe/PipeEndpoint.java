@@ -38,12 +38,23 @@ public class PipeEndpoint {
         this(new PipeDispatcher(new RedisPipeDispatcherFactory()));
     }
 
+    /**
+     * For test purposes only.
+     *
+     * @param pipe {@link Pipe} about the connected user.
+     */
+    @SuppressWarnings("unused")
+    private PipeEndpoint(PipeDispatcher dispatcher, Pipe pipe) {
+        this(dispatcher);
+        this.pipe = pipe;
+    }
+
     public PipeEndpoint(PipeDispatcher dispatcher) {
         this.dispatcher = dispatcher;
     }
 
     @OnOpen
-    public void onOpen(Session session, @PathParam("name") @NotNull String name) throws UnknownHostException { //TODO: ma se sollevo un eccezione mi si chiude il canale?
+    public void onOpen(Session session, @PathParam("name") @NotNull String name) throws UnknownHostException {
         LOG.debug("session opened: {}", session.getId());
         LOG.trace("maxTextMessageBufferSize: {}", session.getMaxTextMessageBufferSize());
         LOG.trace("maxBinaryMessageBufferSize: {}", session.getMaxBinaryMessageBufferSize());

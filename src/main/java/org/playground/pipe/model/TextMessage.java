@@ -8,6 +8,7 @@ public class TextMessage extends Message<String> {
         super(content, sender, target);
     }
 
+    @SuppressWarnings("unused")
     public TextMessage() {
         super();
     }

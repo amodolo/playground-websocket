@@ -15,5 +15,5 @@ public interface MessageConsumer {
      * @param recipientSession {@link Session} about the recipient session to dispatch the message to.
      * @return {@code true} in case of successful result; {@code false} otherwise.
      */
-    Boolean readAll(String recipientKey, Session recipientSession);
+    boolean readAll(String recipientKey, Session recipientSession);
 }

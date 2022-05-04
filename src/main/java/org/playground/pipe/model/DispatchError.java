@@ -1,10 +1,9 @@
 package org.playground.pipe.model;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import org.playground.pipe.utils.Pipe;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 public class DispatchError implements Serializable {
 
@@ -31,23 +30,16 @@ public class DispatchError implements Serializable {
             return code;
         }
 
+        @SuppressWarnings("unused")
         public String getDescription() {
             return description;
         }
     }
 
     private final ErrorCode errorCode;
-    //FIXME: apparentemente inutile: lo eliminiamo?
-    private final Pipe pipe;
 
-    public DispatchError(ErrorCode errorCode, Pipe pipe) {
+    public DispatchError(ErrorCode errorCode) {
         this.errorCode = errorCode;
-        this.pipe = pipe;
-    }
-
-    @JsonIgnore
-    public Pipe getPipe() {
-        return pipe;
     }
 
     public ErrorCode getErrorCode() {
@@ -55,10 +47,22 @@ public class DispatchError implements Serializable {
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        DispatchError that = (DispatchError) o;
+        return errorCode == that.errorCode;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(errorCode);
+    }
+
+    @Override
     public String toString() {
         return "DispatchError{" +
                 "errorCode=" + errorCode +
-                ", pipe=" + pipe +
                 '}';
     }
 }

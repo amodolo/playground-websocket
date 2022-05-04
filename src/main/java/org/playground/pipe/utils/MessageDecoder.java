@@ -13,18 +13,37 @@ import javax.websocket.EndpointConfig;
 /**
  *
  */
-public class MessageDecoder implements Decoder.Text<Message<?>> {
+
+@SuppressWarnings("rawtypes")
+public class MessageDecoder implements Decoder.Text<Message> {
 
     private static final Logger LOG = LogManager.getLogger();
-    private final ObjectMapper mapper = new ObjectMapper();
+    protected static final String DESERIALIZATION_ERROR = "deserialization error";
+    private final ObjectMapper mapper;
+
+    @SuppressWarnings("unused")
+    public MessageDecoder() {
+        this(new ObjectMapper());
+    }
+
+    /**
+     * For test purposes only.
+     *
+     * @param mapper {@link ObjectMapper} instance.
+     */
+    private MessageDecoder(ObjectMapper mapper) {
+        this.mapper = mapper;
+    }
 
     @Override
     public Message<?> decode(String s) throws DecodeException {
         try {
             LOG.trace("Decoding {}", s);
-            return mapper.readValue(s, Message.class);
+            Message<?> result = mapper.readValue(s, Message.class);
+            LOG.trace("Decoded message is {}", result);
+            return result;
         } catch (JsonProcessingException e) {
-            throw new DecodeException(s, "deserialization error", e);
+            throw new DecodeException(s, DESERIALIZATION_ERROR, e);
         }
     }
 
